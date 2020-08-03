@@ -50,9 +50,10 @@ func runCmdCache() {
 	}
 	err := metas.Save(config.CacheFile)
 	if err != nil {
-		fmt.Println("Failed to fetch cache: %s", err)
+		fmt.Printf("failed to save cache: %s\n", err)
+		return 
 	}
-	fmt.Println("dataset meta data are cached to %s", config.CacheFile)
+	fmt.Printf("dataset meta data are cached to %s\n", config.CacheFile)
 }
 
 func listProjects() (*[]string, error) {
