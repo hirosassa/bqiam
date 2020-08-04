@@ -38,16 +38,28 @@ var cacheCmd = &cobra.Command{
 
 func runCmdCache(cmd *cobra.Command, args []string) error {
 	var metas metadata.Metas
-	projects, _ := listProjects()
+
+	projects, err := listProjects()
+	if err != nil {
+		return fmt.Errorf("failed to fetch GCP projects: %s", err)
+	}
+
 	for _, p := range *projects {
-		ds, _ := listDataSets(p)
+		ds, err := listDataSets(p)
+		if err != nil {
+			return fmt.Errorf("failed to fetch BigQuery datasets: project %s, error %s", p, err)
+		}
+
 		for _, d := range *ds {
-			projectMetas, _ := listMetaData(p, d)
+			projectMetas, err := listMetaData(p, d)
+			if err != nil {
+				return fmt.Errorf("failed to fetch metadata: project %s, error %s", p, err)
+			}
 			metas.Metas = append(metas.Metas, projectMetas.Metas...)
 		}
 	}
 
-	err := metas.Save(config.CacheFile)
+	err = metas.Save(config.CacheFile)
 	if err != nil {
 		return fmt.Errorf("failed to save cache: %s", err)
 	}
