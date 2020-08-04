@@ -21,22 +21,20 @@ type Meta struct {
 	Entity  string        `toml:"Entity"`
 }
 
-// Load reads cacbeFile and loads cache data.
+// Load reads cacheFile.
 func (ms *Metas) Load(cacheFile string) error {
-	cache := cacheFile
-	if _, err := toml.DecodeFile(cache, ms); err != nil {
-		return fmt.Errorf("Failed to load meda data cache file. %v", err)
+	if _, err := toml.DecodeFile(cacheFile, ms); err != nil {
+		return fmt.Errorf("Failed to load medadata cache file. %v", err)
 	}
 	return nil
 }
 
-// Save stores the cache data to cacheFile
+// Save stores the cache data to the file
 func (ms *Metas) Save(cacheFile string) error {
-	cache := cacheFile
-	f, err := os.Create(cache)
+	f, err := os.Create(cacheFile)
 	defer f.Close()
 	if err != nil {
-		return fmt.Errorf("Failed to save meta data cache file. err: %s", err)
+		return fmt.Errorf("Failed to save metadata to the file. err: %s", err)
 	}
 	return toml.NewEncoder(f).Encode(ms)
 }
