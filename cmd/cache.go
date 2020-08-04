@@ -33,12 +33,10 @@ var cacheCmd = &cobra.Command{
 	Use:   "cache",
 	Short: "cache fetches bigquery datasets' metadata and store it in local file",
 	Long:  `cache fetches bigquery datasets' metadata and store it in local file`,
-	Run: func(cmd *cobra.Command, args []string) {
-		runCmdCache()
-	},
+	RunE:  runCmdCache,
 }
 
-func runCmdCache() {
+func runCmdCache(cmd *cobra.Command, args []string) error {
 	var metas metadata.Metas
 	projects, _ := listProjects()
 	for _, p := range *projects {
@@ -48,12 +46,14 @@ func runCmdCache() {
 			metas.Metas = append(metas.Metas, projectMetas.Metas...)
 		}
 	}
+
 	err := metas.Save(config.CacheFile)
 	if err != nil {
-		fmt.Printf("failed to save cache: %s\n", err)
-		return 
+		return fmt.Errorf("failed to save cache: %s", err)
 	}
+
 	fmt.Printf("dataset meta data are cached to %s\n", config.CacheFile)
+	return nil
 }
 
 func listProjects() (*[]string, error) {
