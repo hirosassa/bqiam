@@ -12,7 +12,7 @@ CacheFile = "path/to/cache-file.toml"
 then, you can use `bqiam` as follows:
 
 ```
-$ bqiam cache  // fetch bigquery dataset metadata and store it to cache file
+$ bqiam cache  // fetch bigquery dataset metadata and store it to cache file (take about 30-60 sec.)
 dataset meta data are cached to path/to/cache-file.toml
 
 $ bqiam dataset "abc@sample.com"
