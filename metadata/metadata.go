@@ -8,8 +8,6 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-var ms Metas
-
 type Metas struct {
 	Metas []Meta `toml:"Metas"`
 }
@@ -32,9 +30,10 @@ func (ms *Metas) Load(cacheFile string) error {
 // Save stores the cache data to the file
 func (ms *Metas) Save(cacheFile string) error {
 	f, err := os.Create(cacheFile)
-	defer f.Close()
 	if err != nil {
 		return fmt.Errorf("Failed to save metadata to the file. err: %s", err)
 	}
+	defer f.Close()
+
 	return toml.NewEncoder(f).Encode(ms)
 }
