@@ -109,7 +109,7 @@ func listDataSets(project string) (*[]string, error) {
 		return nil, errors.New("failed to create client")
 	}
 
-	it := client.DatasetsInProject(ctx, project)
+	it := client.Datasets(ctx)
 	var datasets []string
 	for {
 		ds, err := it.Next()
