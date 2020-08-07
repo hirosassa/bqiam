@@ -3,6 +3,14 @@
 [![Actions Status: golangci-lint](https://github.com/hirosassa/bqiam/workflows/golangci-lint/badge.svg)](https://github.com/hirosassa/bqiam/actions?query=workflow%3A"golangci-lint")
 [![Apache-2.0](https://img.shields.io/github/license/hirosassa/bqiam)](LICENSE)
 
+## What is this?
+
+This tool provides easier permission management for BigQuery.
+
+Currently supports;
+
+- list the user's permissions for each BigQuery Datasets
+
 ## Usage
 
 prepare configuration file as following format (currently support only the file name is `.bqiam.toml` on your `$HOME`):
