@@ -16,10 +16,10 @@ limitations under the License.
 package cmd
 
 import (
+	bq "cloud.google.com/go/bigquery"
 	"context"
 	"errors"
 	"fmt"
-	bq "cloud.google.com/go/bigquery"
 
 	"github.com/spf13/cobra"
 )
@@ -27,7 +27,7 @@ import (
 const (
 	READER = "READER"
 	WRITER = "WRITER"
-	OWNER = "OWNER"
+	OWNER  = "OWNER"
 )
 
 func accessRole(role string) (bq.AccessRole, error) {
@@ -40,7 +40,7 @@ func accessRole(role string) (bq.AccessRole, error) {
 		return bq.OwnerRole, nil
 	}
 
-	return "", errors.New(fmt.Sprintf("failed to parse %s", role))
+	return "", fmt.Errorf("failed to parse %s", role)
 }
 
 func permit(role bq.AccessRole, project string, users, datasets []string) error {
@@ -92,28 +92,28 @@ to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		role, err := accessRole(args[0])
 		if err != nil {
-			return errors.New(fmt.Sprintf("READER or WRITER or OWNER must be specified: %s", err))
+			return fmt.Errorf("READER or WRITER or OWNER must be specified: %s", err)
 		}
 
 		project, err := cmd.Flags().GetString("project")
 		if err != nil {
-			return errors.New(fmt.Sprintf("failed to parse project flag: %s", err))
+			return fmt.Errorf("failed to parse project flag: %s", err)
 		}
 
 		users, err := cmd.Flags().GetStringSlice("users")
 		if err != nil {
-			return errors.New(fmt.Sprintf("failed to parse users flag: %s", err))
+			return fmt.Errorf("failed to parse users flag: %s", err)
 		}
 
 		datasets, err := cmd.Flags().GetStringSlice("datasets")
 		if err != nil {
-			return errors.New(fmt.Sprintf("failed to parse datasets flag: %s", err))
+			return fmt.Errorf("failed to parse datasets flag: %s", err)
 		}
 
 		err = permit(role, project, users, datasets)
 
 		if err != nil {
-			return errors.New(fmt.Sprintf("failed to permit: %s", err))
+			return fmt.Errorf("failed to permit: %s", err)
 		}
 
 		return nil
@@ -130,7 +130,10 @@ func init() {
 	rootCmd.AddCommand(permitCmd)
 
 	permitCmd.Flags().StringP("project", "p", "", "Specify GCP project id")
-	permitCmd.MarkFlagRequired("project")
+	err := permitCmd.MarkFlagRequired("project")
+	if err != nil {
+		panic(err)
+	}
 
 	permitCmd.Flags().StringSliceP("users", "u", []string{}, "Specify user email(s)")
 	permitCmd.Flags().StringSliceP("datasets", "d", []string{}, "Specify dataset(s)")
