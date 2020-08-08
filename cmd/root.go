@@ -11,7 +11,6 @@ import (
 
 var cfgFile string
 
-
 var config Config
 
 type Config struct {
@@ -75,5 +74,9 @@ func init() {
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 	rootCmd.PersistentFlags().IntP("refresh", "r", 24, "cache refresh threshold in hour (default is 24 hours)")
-	viper.BindPFlag("CacheRefresh", rootCmd.PersistentFlags().Lookup("refresh"))  // overwrite by flag if exists
+	err := viper.BindPFlag("CacheRefresh", rootCmd.PersistentFlags().Lookup("refresh")) // overwrite by flag if exists
+	if err != nil {
+		fmt.Println("Failed to bind flag 'refresh': ", err)
+		os.Exit(1)
+	}
 }

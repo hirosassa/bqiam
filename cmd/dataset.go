@@ -47,8 +47,10 @@ func runCmdDataset(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// refreshCache checks the cacheFile and refresh if needed and the user confirmed.
+// refreshCache ignores all the errors occurred.
 func refreshCache(cmd *cobra.Command) {
-	isExpired, _ := checkCacheExpired(config.CacheFile) // ignore errors
+	isExpired, _ := checkCacheExpired(config.CacheFile)
 	if isExpired {
 		fmt.Printf("Refresh cache? (takes 30-60 sec) [y/n]")
 		reader := bufio.NewReader(os.Stdin)
@@ -59,7 +61,7 @@ func refreshCache(cmd *cobra.Command) {
 			return
 		}
 
-		runCmdCache(cmd, []string{})  // run cache coomand to refresh
+		_ = runCmdCache(cmd, []string{}) // run cache command to refresh
 	}
 }
 
@@ -69,7 +71,7 @@ func checkCacheExpired(filename string) (bool, error) {
 		return false, fmt.Errorf("Failed to get file modified timestamp: err: %s", err)
 	}
 
-	timePassed := time.Now().Sub(t.ModTime()).Hours()
+	timePassed := time.Since(t.ModTime()).Hours()
 	return timePassed > float64(config.CacheRefresh), nil
 }
 
