@@ -16,10 +16,13 @@ limitations under the License.
 package cmd
 
 import (
+	"bufio"
 	bq "cloud.google.com/go/bigquery"
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -48,6 +51,20 @@ func permit(role bq.AccessRole, project string, users, datasets []string) error 
 	client, err := bq.NewClient(ctx, project)
 	if err != nil {
 		return errors.New("failed to create bigquery Client")
+	}
+
+	fmt.Printf("project_id: %s\n", project)
+	fmt.Printf("role:       %s\n", role)
+	fmt.Printf("datasets:   %s\n", datasets)
+	fmt.Printf("users:      %s\n", users)
+	fmt.Printf("Are you sure? [y/n]")
+
+	reader := bufio.NewReader(os.Stdin)
+	res, err := reader.ReadString('\n')
+
+	if err != nil || strings.TrimSpace(res) != "y" {
+		fmt.Println("Abort.")
+		return nil
 	}
 
 	defer client.Close()
