@@ -17,13 +17,13 @@ package cmd
 
 import (
 	"bufio"
-	bq "cloud.google.com/go/bigquery"
 	"context"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
 
+	bq "cloud.google.com/go/bigquery"
 	"github.com/spf13/cobra"
 )
 
@@ -103,9 +103,7 @@ var permitCmd = &cobra.Command{
 	Long: `permit some users to some datasets access as READER or WRITER or OWNER
 For example:
 
-./bqiam permit READER -p bq-project-id -u user1@email.com -u user2@email.com -d dataset1 -d dataset2
-
-to quickly create a Cobra application.`,
+bqiam permit READER -p bq-project-id -u user1@email.com -u user2@email.com -d dataset1 -d dataset2`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		role, err := accessRole(args[0])
 		if err != nil {
