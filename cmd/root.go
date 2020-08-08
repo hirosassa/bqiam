@@ -11,11 +11,13 @@ import (
 
 var cfgFile string
 
+
 var config Config
 
 type Config struct {
 	BigqueryProjects []string
 	CacheFile        string
+	CacheRefresh     int
 }
 
 // rootCmd represents the root command
@@ -71,4 +73,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.bqiam.toml)")
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	rootCmd.PersistentFlags().IntP("refresh", "r", 24, "cache refresh threshold in hour (default is 24 hours)")
+	viper.BindPFlag("CacheRefresh", rootCmd.PersistentFlags().Lookup("refresh"))  // overwrite by flag if exists
 }

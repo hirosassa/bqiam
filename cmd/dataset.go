@@ -1,11 +1,16 @@
 package cmd
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
+	"os"
+	"strings"
+	"time"
 
 	"github.com/hirosassa/bqiam/metadata"
 	"github.com/spf13/cobra"
+	"gopkg.in/djherbis/times.v1"
 )
 
 // datasetCmd represents the dataset command
@@ -26,6 +31,8 @@ that the input user or service account is able to access.
 }
 
 func runCmdDataset(cmd *cobra.Command, args []string) error {
+	refreshCache(cmd) // refresh cache if needed
+
 	var ms metadata.Metas
 	if err := ms.Load(config.CacheFile); err != nil {
 		return err
@@ -38,6 +45,32 @@ func runCmdDataset(cmd *cobra.Command, args []string) error {
 		}
 	}
 	return nil
+}
+
+func refreshCache(cmd *cobra.Command) {
+	isExpired, _ := checkCacheExpired(config.CacheFile) // ignore errprs
+	if isExpired {
+		fmt.Printf("Refresh cache? (takes 30-60 sec) [y/n]")
+		reader := bufio.NewReader(os.Stdin)
+		res, err := reader.ReadString('\n')
+
+		if err != nil || strings.TrimSpace(res) != "y" {
+			fmt.Println("Skip refreshing.")
+			return
+		}
+
+		runCmdCache(cmd, []string{})  // run cache coomand to refresh
+	}
+}
+
+func checkCacheExpired(filename string) (bool, error) {
+	t, err := times.Stat(filename)
+	if err != nil {
+		return false, fmt.Errorf("Failed to get file modified timestamp: err: %s", err)
+	}
+
+	timePassed := time.Now().Sub(t.ModTime()).Hours()
+	return timePassed > float64(config.CacheRefresh), nil
 }
 
 func init() {
