@@ -20,6 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os/exec"
+
 	"os"
 	"strings"
 
@@ -69,6 +71,15 @@ func permit(role bq.AccessRole, project string, users, datasets []string) error 
 
 	defer client.Close()
 
+	// grant roles/bigquery.jobUser if needed
+	for _, user := range users {
+		err = grantBQJobUser(project, user)
+		if err != nil {
+			return err
+		}
+	}
+
+	// grant permissions for each datasets
 	for _, dataset := range datasets {
 		for _, user := range users {
 			ds := client.Dataset(dataset)
@@ -94,6 +105,39 @@ func permit(role bq.AccessRole, project string, users, datasets []string) error 
 	}
 
 	return nil
+}
+
+// grantBQJobUser grants user roles/bigquery.jobUser permission to run job on BigQuery
+func grantBQJobUser(project, user string) error {
+	policy, err := fetchCurrentPolicy(project)
+	if err != nil {
+		return fmt.Errorf("failed to fetch current policy: error %s", err)
+	}
+
+	if hasBQJobUser(*policy, user) { // already has roles/bigquery.jobUser
+		return nil
+	}
+
+	cmd := fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member user:%s --role roles/bigquery.jobUser", project, user)
+	err = exec.Command(cmd).Run()
+	if err != nil {
+		return fmt.Errorf("failed to update policy bindings to grant roles/bigquery.jobUser: error: %s", err)
+	}
+
+	return nil
+}
+
+func hasBQJobUser(p ProjectPolicy, user string) bool {
+	for _, b := range p.Bindings {
+		if b.Role == "roles/bigquery.jobUser" {
+			for _, m := range b.Members {
+				if m == user {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 // permitCmd represents the permit command
