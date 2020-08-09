@@ -16,7 +16,7 @@ var config Config
 type Config struct {
 	BigqueryProjects []string
 	CacheFile        string
-	CacheRefresh     int
+	CacheRefreshHour int
 }
 
 // rootCmd represents the root command

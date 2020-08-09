@@ -72,7 +72,7 @@ func checkCacheExpired(filename string) (bool, error) {
 	}
 
 	timePassed := time.Since(t.ModTime()).Hours()
-	return timePassed > float64(config.CacheRefresh), nil
+	return timePassed > float64(config.CacheRefreshHour), nil
 }
 
 func init() {
