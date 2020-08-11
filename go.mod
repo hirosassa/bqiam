@@ -18,5 +18,6 @@ require (
 	golang.org/x/sys v0.0.0-20200728102440-3e129f6d46b1 // indirect
 	golang.org/x/text v0.3.3 // indirect
 	google.golang.org/api v0.13.0
+	gopkg.in/djherbis/times.v1 v1.2.0
 	gopkg.in/ini.v1 v1.57.0 // indirect
 )
