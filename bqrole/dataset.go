@@ -13,12 +13,6 @@ import (
 	bq "cloud.google.com/go/bigquery"
 )
 
-const (
-	READER = "READER"
-	WRITER = "WRITER"
-	OWNER  = "OWNER"
-)
-
 func DatasetRole(role string) (bq.AccessRole, error) {
 	switch role {
 	case READER:
