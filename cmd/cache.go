@@ -22,10 +22,11 @@ import (
 
 	bq "cloud.google.com/go/bigquery"
 
-	"github.com/hirosassa/bqiam/metadata"
 	"github.com/spf13/cobra"
 	"google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/iterator"
+
+	"github.com/hirosassa/bqiam/metadata"
 )
 
 // cacheCmd represents the cache command
