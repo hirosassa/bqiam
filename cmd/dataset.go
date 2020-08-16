@@ -52,7 +52,7 @@ func runCmdDataset(cmd *cobra.Command, args []string) error {
 func refreshCache(cmd *cobra.Command) {
 	isExpired, _ := checkCacheExpired(config.CacheFile)
 	if isExpired {
-		fmt.Printf("Refresh cache? (takes 30-60 sec) [y/n]")
+		fmt.Printf("Your cache is old (passed %d hours). Refresh cache? (takes 30-60 sec) [y/n]", config.CacheRefreshHour)
 		reader := bufio.NewReader(os.Stdin)
 		res, err := reader.ReadString('\n')
 
