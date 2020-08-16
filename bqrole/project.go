@@ -10,23 +10,26 @@ import (
 	"strings"
 
 	bq "cloud.google.com/go/bigquery"
-	"github.com/spf13/cobra"
+)
+
+// This tool does not grant project OWNER permission for safety
+const (
+	VIEWER = "VIEWER"
+	EDITOR = "EDITOR"
 )
 
 func projectRole(role string) (string, error) {
 	switch role {
-	case READER:
-		return "roles/reader", nil
-	case WRITER:
-		return "roles/writer", nil
-	case OWNER:
-		return "roles/owner", nil
+	case VIEWER:
+		return "roles/viewer", nil
+	case EDITOR:
+		return "roles/editor", nil
 	}
 
 	return "", fmt.Errorf("failed to parse %s", role)
 }
 
-func permitpj(role, project string, users []string) error {
+func permitProject(role, project string, users []string) error {
 	ctx := context.Background()
 	client, err := bq.NewClient(ctx, project)
 	if err != nil {
@@ -89,56 +92,4 @@ func hasProjectRole(p ProjectPolicy, user, role string) bool {
 		}
 	}
 	return false
-}
-
-// permitpjCmd represents the permitpj command
-var permitpjCmd = &cobra.Command{
-	Use:   "permitpj [READER | WRITER | OWNER] -p [bq-project-id (required)] -u [user(s) (required)]",
-	Short: "permitpj permits some users to some project-wide access",
-	Long: `permitpj some users to some project-wide access as READER or WRITER or OWNER
-For example:
-
-bqiam permitpj READER -p bq-project-id -u user1@email.com -u user2@email.com`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		role, err := projectRole(args[0])
-		if err != nil {
-			return fmt.Errorf("READER or WRITER or OWNER must be specified: %s", err)
-		}
-
-		project, err := cmd.Flags().GetString("project")
-		if err != nil {
-			return fmt.Errorf("failed to parse project flag: %s", err)
-		}
-
-		users, err := cmd.Flags().GetStringSlice("users")
-		if err != nil {
-			return fmt.Errorf("failed to parse users flag: %s", err)
-		}
-
-		err = permitpj(role, project, users)
-
-		if err != nil {
-			return fmt.Errorf("failed to permit: %s", err)
-		}
-
-		return nil
-	},
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 1 {
-			return errors.New("READER or WRITER or OWNER must be specified")
-		}
-		return nil
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(permitpjCmd)
-
-	permitCmd.Flags().StringP("project", "p", "", "Specify GCP project id")
-	err := permitCmd.MarkFlagRequired("project")
-	if err != nil {
-		panic(err)
-	}
-
-	permitCmd.Flags().StringSliceP("users", "u", []string{}, "Specify user email(s)")
 }

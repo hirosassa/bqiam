@@ -24,9 +24,7 @@ var rootCmd = &cobra.Command{
 	Use:   "bqiam",
 	Short: "bqiam is a tool for bigquery administrator",
 	Long: `bqiam is a tool for bigquery administrator.
-This tool provides following functionalities:
-- dataset: returns a set of roles that the input user account has for each dataset
-- user: returns a set of users who can access the input dataset
+This tool provides easier IAM management functionalities
 `,
 }
 
