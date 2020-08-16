@@ -1,4 +1,4 @@
-package cmd
+package bqrole
 
 import (
 	"encoding/json"
