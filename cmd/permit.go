@@ -30,9 +30,9 @@ func init() {
 
 func newPermitCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "permit [sub-command] [flags]",
-		Short: "permit some users to some access",
-		Long: `permit some users to some datasets or project-wide access as READER or WRITER or OWNER
+		Use:   "permit",
+		Short: "permits some users to some access",
+		Long: `permits some users to some datasets or project-wide access as READER or WRITER or OWNER
 For example:
 
 bqiam permit dataset READER -p bq-project-id -u user1@email.com -u user2@email.com -d dataset1 -d dataset2
@@ -75,7 +75,7 @@ bqiam project READER -p bq-project-id -u user1@email.com -u user2@email.com`,
 
 func runPermitProjectCmd(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return errors.New("VIEWER or EDITOR must be specified")
+		return errors.New("READER or VIEWER must be specified")
 	}
 
 	role, err := bqrole.ProjectRole(args[0])
