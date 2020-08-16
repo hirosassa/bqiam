@@ -51,6 +51,7 @@ func PermitProject(role, project string, users []string) error {
 		if err != nil {
 			return err
 		}
+		fmt.Printf("Permit %s to %s access as %s\n", user, project, role)
 	}
 
 	return nil

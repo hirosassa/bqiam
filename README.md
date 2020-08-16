@@ -10,7 +10,8 @@ This tool provides easier permission management for BigQuery.
 Currently supports;
 
 - list the user's permissions for each BigQuery Datasets
-- permit users to each BigQuery Datasets access role  
+- permit users to each BigQuery Datasets access role (READER/WRITER/OWNER) and `roles/bigquery.jobUser` (to run query)
+- permit users to Project-wide access role (`roles/viewer` or `rolse/editor`) 
 
 ## Usage
 
@@ -40,9 +41,18 @@ sample-prj sample-ds2 READER
 Grant the user(s) a role to access the dataset(s).
 
 ```bash
-$ bqiam permit READER -p bq-project-id -u user1@email.com -u user2@email.com -d dataset1 -d dataset2
+$ bqiam permit dataset READER -p bq-project-id -u user1@email.com -u user2@email.com -d dataset1 -d dataset2
 Permit user1@email.com to dataset1 access as READER
 Permit user2@email.com to dataset1 access as READER
+...
+
+```
+
+Grant the user(s) a project-wide role 
+```bash
+$ bqiam permit project READER -p bq-project-id -u user1@email.com -u user2@email.com
+Permit user1@email.com to bq-project-id access as READER
+Permit user2@email.com to bq-project-id access as READER
 ...
 
 ```
