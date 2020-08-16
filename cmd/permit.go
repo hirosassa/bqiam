@@ -17,8 +17,8 @@ package cmd
 
 import (
 	"errors"
-	 "fmt"
-	
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/hirosassa/bqiam/bqrole"
@@ -77,8 +77,8 @@ func runPermitProjectCmd(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return errors.New("VIEWER or EDITOR must be specified")
 	}
-	
-	role, err := permit.projectRole(args[0])
+
+	role, err := bqrole.ProjectRole(args[0])
 	if err != nil {
 		return fmt.Errorf("READER or WRITER must be specified: %s", err)
 	}
@@ -93,7 +93,7 @@ func runPermitProjectCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse users flag: %s", err)
 	}
 
-	err = permit.permitProject(role, project, users)
+	err = bqrole.PermitProject(role, project, users)
 
 	if err != nil {
 		return fmt.Errorf("failed to permit: %s", err)
@@ -101,7 +101,6 @@ func runPermitProjectCmd(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
-
 
 func newPermitDatasetCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -131,7 +130,7 @@ func runPermitDatasetCmd(cmd *cobra.Command, args []string) error {
 		return errors.New("READER or WRITER or OWNER must be specified")
 	}
 
-	role, err := permit.datasetRole(args[0])
+	role, err := bqrole.DatasetRole(args[0])
 	if err != nil {
 		return fmt.Errorf("READER or WRITER or OWNER must be specified: %s", err)
 	}
@@ -151,7 +150,7 @@ func runPermitDatasetCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse datasets flag: %s", err)
 	}
 
-	err = permit.permitDataset(role, project, users, datasets)
+	err = bqrole.PermitDataset(role, project, users, datasets)
 
 	if err != nil {
 		return fmt.Errorf("failed to permit: %s", err)
