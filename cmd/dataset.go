@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/djherbis/times.v1"
 
-	"github.com/hirosassa/bqiam/metadata"	
+	"github.com/hirosassa/bqiam/metadata"
 )
 
 // datasetCmd represents the dataset command
