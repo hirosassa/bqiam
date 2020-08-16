@@ -1,4 +1,4 @@
-package cmd
+package bqrole
 
 import (
 	"bufio"
@@ -18,7 +18,7 @@ const (
 	EDITOR = "EDITOR"
 )
 
-func projectRole(role string) (string, error) {
+func ProjectRole(role string) (string, error) {
 	switch role {
 	case VIEWER:
 		return "roles/viewer", nil
@@ -29,7 +29,7 @@ func projectRole(role string) (string, error) {
 	return "", fmt.Errorf("failed to parse %s", role)
 }
 
-func permitProject(role, project string, users []string) error {
+func PermitProject(role, project string, users []string) error {
 	ctx := context.Background()
 	client, err := bq.NewClient(ctx, project)
 	if err != nil {
