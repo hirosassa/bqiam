@@ -93,11 +93,12 @@ func grantBQJobUser(project, user string) error {
 	}
 
 	if hasBQJobUser(*policy, user) { // already has roles/bigquery.jobUser
+		fmt.Printf("%s already have bigquery.jobUser\n", user)
 		return nil
 	}
 
 	cmd := fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member user:%s --role roles/bigquery.jobUser", project, user)
-	err = exec.Command(cmd).Run()
+	err = exec.Command("bash", "-c", cmd).Run()
 	if err != nil {
 		return fmt.Errorf("failed to update policy bindings to grant roles/bigquery.jobUser: error: %s", err)
 	}
@@ -109,7 +110,7 @@ func hasBQJobUser(p ProjectPolicy, user string) bool {
 	for _, b := range p.Bindings {
 		if b.Role == "roles/bigquery.jobUser" {
 			for _, m := range b.Members {
-				if m == user {
+				if strings.HasSuffix(m, user) { // format of m is (user|service):[user-email]
 					return true
 				}
 			}
