@@ -39,7 +39,7 @@ bqiam permit dataset READER -p bq-project-id -u user1@email.com -u user2@email.c
 bqiam permit project VIEWER -p bq-project-id -u user1@email.com
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help()
+			_ = cmd.Help()
 		},
 	}
 
