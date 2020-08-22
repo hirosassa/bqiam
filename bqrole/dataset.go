@@ -97,10 +97,17 @@ func grantBQJobUser(project, user string) error {
 		return nil
 	}
 
-	cmd := fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member user:%s --role roles/bigquery.jobUser", project, user)
+	var member string
+	if isServiceAccount(user) {
+		member = "serviceAccount:" + user
+	} else {
+		member = "user:" + user
+	}
+
+	cmd := fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role roles/bigquery.jobUser", project, member)
 	err = exec.Command("bash", "-c", cmd).Run()
 	if err != nil {
-		return fmt.Errorf("failed to update policy bindings to grant roles/bigquery.jobUser: error: %s", err)
+		return fmt.Errorf("failed to update policy bindings to grant %s roles/bigquery.jobUser: error: %s", user, err)
 	}
 
 	return nil
@@ -110,7 +117,7 @@ func hasBQJobUser(p ProjectPolicy, user string) bool {
 	for _, b := range p.Bindings {
 		if b.Role == "roles/bigquery.jobUser" {
 			for _, m := range b.Members {
-				if strings.HasSuffix(m, user) { // format of m is (user|service):[user-email]
+				if strings.HasSuffix(m, user) { // format of m is (user|serviceAccount):[user-email]
 					return true
 				}
 			}

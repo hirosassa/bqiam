@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"strings"
 )
 
 type ProjectPolicy struct {
@@ -29,4 +30,8 @@ func fetchCurrentPolicy(project string) (*ProjectPolicy, error) {
 	}
 
 	return &policy, nil
+}
+
+func isServiceAccount(user string) bool {
+	return strings.HasSuffix(user, "iam.gserviceaccount.com")
 }
