@@ -16,140 +16,145 @@ limitations under the License.
 package cmd
 
 import (
-	"bufio"
-	"context"
 	"errors"
 	"fmt"
-	"os"
-	"strings"
 
-	bq "cloud.google.com/go/bigquery"
 	"github.com/spf13/cobra"
+
+	"github.com/hirosassa/bqiam/bqrole"
 )
 
-const (
-	READER = "READER"
-	WRITER = "WRITER"
-	OWNER  = "OWNER"
-)
-
-func accessRole(role string) (bq.AccessRole, error) {
-	switch role {
-	case READER:
-		return bq.ReaderRole, nil
-	case WRITER:
-		return bq.WriterRole, nil
-	case OWNER:
-		return bq.OwnerRole, nil
-	}
-
-	return "", fmt.Errorf("failed to parse %s", role)
+func init() {
+	rootCmd.AddCommand(newPermitCommand())
 }
 
-func permit(role bq.AccessRole, project string, users, datasets []string) error {
-	ctx := context.Background()
-	client, err := bq.NewClient(ctx, project)
+func newPermitCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "permit",
+		Short: "permits some users to some access",
+		Long: `permits some users to some datasets or project-wide access as READER or WRITER or OWNER
+For example:
+
+bqiam permit dataset READER -p bq-project-id -u user1@email.com -u user2@email.com -d dataset1 -d dataset2
+bqiam permit project READER -p bq-project-id -u user1@email.com
+`,
+		Run: func(cmd *cobra.Command, args []string) {
+			_ = cmd.Help()
+		},
+	}
+
+	cmd.AddCommand(
+		newPermitProjectCmd(),
+		newPermitDatasetCmd(),
+	)
+
+	return cmd
+}
+
+func newPermitProjectCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "project [READER | WRITER] -p [bq-project-id (required)] -u [user(s) (required)]",
+		Short: "permits some users to some project-wide access",
+		Long: `permit project permits some users to some project-wide access as READER or WRITER or OWNER
+For example:
+
+bqiam project READER -p bq-project-id -u user1@email.com -u user2@email.com`,
+		RunE: runPermitProjectCmd,
+	}
+
+	cmd.Flags().StringP("project", "p", "", "Specify GCP project id")
+	err := cmd.MarkFlagRequired("project")
 	if err != nil {
-		return errors.New("failed to create bigquery Client")
+		panic(err)
 	}
 
-	fmt.Printf("project_id: %s\n", project)
-	fmt.Printf("role:       %s\n", role)
-	fmt.Printf("datasets:   %s\n", datasets)
-	fmt.Printf("users:      %s\n", users)
-	fmt.Printf("Are you sure? [y/n]")
+	cmd.Flags().StringSliceP("users", "u", []string{}, "Specify user email(s)")
 
-	reader := bufio.NewReader(os.Stdin)
-	res, err := reader.ReadString('\n')
+	return cmd
+}
 
-	if err != nil || strings.TrimSpace(res) != "y" {
-		fmt.Println("Abort.")
-		return nil
+func runPermitProjectCmd(cmd *cobra.Command, args []string) error {
+	if len(args) != 1 {
+		return errors.New("READER or WRITER must be specified")
 	}
 
-	defer client.Close()
+	role, err := bqrole.ProjectRole(args[0])
+	if err != nil {
+		return fmt.Errorf("READER or WRITER must be specified: %s", err)
+	}
 
-	for _, dataset := range datasets {
-		for _, user := range users {
-			ds := client.Dataset(dataset)
-			meta, err := ds.Metadata(ctx)
-			if err != nil {
-				return err
-			}
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return fmt.Errorf("failed to parse project flag: %s", err)
+	}
 
-			update := bq.DatasetMetadataToUpdate{
-				Access: append(meta.Access, &bq.AccessEntry{
-					Role:       role,
-					EntityType: bq.UserEmailEntity,
-					Entity:     user,
-				}),
-			}
+	users, err := cmd.Flags().GetStringSlice("users")
+	if err != nil {
+		return fmt.Errorf("failed to parse users flag: %s", err)
+	}
 
-			if _, err := ds.Update(ctx, update, meta.ETag); err != nil {
-				return err
-			}
+	err = bqrole.PermitProject(role, project, users)
 
-			fmt.Printf("Permit %s to %s access as %s\n", user, dataset, role)
-		}
+	if err != nil {
+		return fmt.Errorf("failed to permit: %s", err)
 	}
 
 	return nil
 }
 
-// permitCmd represents the permit command
-var permitCmd = &cobra.Command{
-	Use:   "permit [READER | WRITER | OWNER] -p [bq-project-id (required)] [flags]",
-	Short: "permit some users to some datasets access",
-	Long: `permit some users to some datasets access as READER or WRITER or OWNER
+func newPermitDatasetCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "dataset [READER | WRITER | OWNER] -p [bq-project-id (required)] [flags]",
+		Short: "permits some users to some datasets access",
+		Long: `permits some users to some datasets access as READER or WRITER or OWNER
 For example:
 
-bqiam permit READER -p bq-project-id -u user1@email.com -u user2@email.com -d dataset1 -d dataset2`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		role, err := accessRole(args[0])
-		if err != nil {
-			return fmt.Errorf("READER or WRITER or OWNER must be specified: %s", err)
-		}
+bqiam dataset READER -p bq-project-id -u user1@email.com -u user2@email.com -d dataset1 -d dataset2`,
+		RunE: runPermitDatasetCmd,
+	}
 
-		project, err := cmd.Flags().GetString("project")
-		if err != nil {
-			return fmt.Errorf("failed to parse project flag: %s", err)
-		}
-
-		users, err := cmd.Flags().GetStringSlice("users")
-		if err != nil {
-			return fmt.Errorf("failed to parse users flag: %s", err)
-		}
-
-		datasets, err := cmd.Flags().GetStringSlice("datasets")
-		if err != nil {
-			return fmt.Errorf("failed to parse datasets flag: %s", err)
-		}
-
-		err = permit(role, project, users, datasets)
-
-		if err != nil {
-			return fmt.Errorf("failed to permit: %s", err)
-		}
-
-		return nil
-	},
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 1 {
-			return errors.New("READER or WRITER or OWNER must be specified")
-		}
-		return nil
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(permitCmd)
-
-	permitCmd.Flags().StringP("project", "p", "", "Specify GCP project id")
-	err := permitCmd.MarkFlagRequired("project")
+	cmd.Flags().StringP("project", "p", "", "Specify GCP project id")
+	err := cmd.MarkFlagRequired("project")
 	if err != nil {
 		panic(err)
 	}
 
-	permitCmd.Flags().StringSliceP("users", "u", []string{}, "Specify user email(s)")
-	permitCmd.Flags().StringSliceP("datasets", "d", []string{}, "Specify dataset(s)")
+	cmd.Flags().StringSliceP("users", "u", []string{}, "Specify user email(s)")
+	cmd.Flags().StringSliceP("datasets", "d", []string{}, "Specify dataset(s)")
+
+	return cmd
+}
+
+func runPermitDatasetCmd(cmd *cobra.Command, args []string) error {
+	if len(args) != 1 {
+		return errors.New("READER or WRITER or OWNER must be specified")
+	}
+
+	role, err := bqrole.DatasetRole(args[0])
+	if err != nil {
+		return fmt.Errorf("READER or WRITER or OWNER must be specified: %s", err)
+	}
+
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return fmt.Errorf("failed to parse project flag: %s", err)
+	}
+
+	users, err := cmd.Flags().GetStringSlice("users")
+	if err != nil {
+		return fmt.Errorf("failed to parse users flag: %s", err)
+	}
+
+	datasets, err := cmd.Flags().GetStringSlice("datasets")
+	if err != nil {
+		return fmt.Errorf("failed to parse datasets flag: %s", err)
+	}
+
+	err = bqrole.PermitDataset(role, project, users, datasets)
+
+	if err != nil {
+		return fmt.Errorf("failed to permit: %s", err)
+	}
+
+	return nil
 }
