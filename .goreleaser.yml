@@ -1,4 +1,4 @@
-project_name: git-bump
+project_name: bqiam
 env:
   - GO111MODULE=on
 before:
