@@ -3,6 +3,7 @@
 [![Actions Status: golangci-lint](https://github.com/hirosassa/bqiam/workflows/golangci-lint/badge.svg)](https://github.com/hirosassa/bqiam/actions?query=workflow%3A"golangci-lint")
 [![Apache-2.0](https://img.shields.io/github/license/hirosassa/bqiam)](LICENSE)
 
+
 ## What is this?
 
 This tool provides easier permission management for BigQuery.
@@ -12,6 +13,19 @@ Currently supports;
 - list the user's permissions for each BigQuery Datasets
 - permit users to each BigQuery Datasets access role (READER/WRITER/OWNER) and `roles/bigquery.jobUser` (to run query)
 - permit users to Project-wide access role (`roles/viewer` or `rolse/editor`) 
+
+
+## requirement
+
+You must have a `roles/owner` on your GCP project.
+
+
+## install
+
+```bash
+$ go get -u github.com/hirosassa/bqiam
+```
+
 
 ## Usage
 
@@ -38,7 +52,7 @@ sample-prj sample-ds2 READER
 ...
 ```
 
-Grant the user(s) a role to access the dataset(s).
+Grant the user(s) a role to access the dataset(s). This command also adds `roles/bigquery.jobUser` automatically.
 
 ```bash
 $ bqiam permit dataset READER -p bq-project-id -u user1@email.com -u user2@email.com -d dataset1 -d dataset2
@@ -48,7 +62,7 @@ Permit user2@email.com to dataset1 access as READER
 
 ```
 
-Grant the user(s) a project-wide role 
+Grant the user(s) a project-wide role.
 ```bash
 $ bqiam permit project READER -p bq-project-id -u user1@email.com -u user2@email.com
 Permit user1@email.com to bq-project-id access as READER
