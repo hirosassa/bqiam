@@ -15,12 +15,12 @@ Currently supports;
 - permit users to Project-wide access role (`roles/viewer` or `rolse/editor`) 
 
 
-## requirement
+## Requirement
 
 You must have a `roles/owner` on your GCP project.
 
 
-## install
+## Install
 
 ```bash
 $ go get -u github.com/hirosassa/bqiam
