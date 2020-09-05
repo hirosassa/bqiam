@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	bq "cloud.google.com/go/bigquery"
+	"github.com/rs/zerolog/log"
 )
 
 func DatasetRole(role string) (bq.AccessRole, error) {
@@ -93,7 +94,7 @@ func grantBQJobUser(project, user string) error {
 	}
 
 	if hasBQJobUser(*policy, user) { // already has roles/bigquery.jobUser
-		fmt.Printf("%s already have bigquery.jobUser\n", user)
+		log.Info().Msgf("%s already have bigquery.jobUser\n", user)
 		return nil
 	}
 

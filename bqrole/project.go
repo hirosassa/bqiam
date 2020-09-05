@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	bq "cloud.google.com/go/bigquery"
+	"github.com/rs/zerolog/log"
 )
 
 func ProjectRole(role string) (string, error) {
@@ -63,8 +64,9 @@ func grantProjectRole(project, user, role string) error {
 		return fmt.Errorf("failed to fetch current policy: error %s", err)
 	}
 
-	if hasProjectRole(*policy, user, role) {
-		return fmt.Errorf("%s already has a role: %s, project: %s", user, role, project)
+	if hasProjectRole(*policy, user, role) { // already has roles/viewer
+		log.Info().Msgf("%s already has a role: %s, project: %s. skipped.", user, role, project)
+		return nil
 	}
 
 	var member string
