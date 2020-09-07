@@ -5,6 +5,7 @@ import (
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -18,6 +19,8 @@ type Config struct {
 	CacheFile        string
 	CacheRefreshHour int
 }
+
+var verbose, debug bool // for verbose and debug output
 
 // rootCmd represents the root command
 var rootCmd = &cobra.Command{
@@ -64,6 +67,18 @@ func initConfig() {
 		fmt.Println("Failed to read Config File:", viper.ConfigFileUsed())
 		os.Exit(1)
 	}
+
+	logOutput() // set log level
+}
+
+func logOutput() {
+	zerolog.SetGlobalLevel(zerolog.Disabled) // default: quiet mode
+	switch {
+	case verbose:
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case debug:
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
 }
 
 func init() {
@@ -72,6 +87,11 @@ func init() {
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 	rootCmd.PersistentFlags().IntP("refresh", "r", 24, "cache refresh threshold in hour (default is 24 hours)")
+
+	// for log output
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable varbose log output")
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug log output")
+
 	err := viper.BindPFlag("CacheRefreshHour", rootCmd.PersistentFlags().Lookup("refresh")) // overwrite by flag if exists
 	if err != nil {
 		fmt.Println("Failed to bind flag 'refresh': ", err)

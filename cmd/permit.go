@@ -94,7 +94,6 @@ func runPermitProjectCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	err = bqrole.PermitProject(role, project, users)
-
 	if err != nil {
 		return fmt.Errorf("failed to permit: %s", err)
 	}
@@ -151,7 +150,6 @@ func runPermitDatasetCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	err = bqrole.PermitDataset(role, project, users, datasets)
-
 	if err != nil {
 		return fmt.Errorf("failed to permit: %s", err)
 	}
