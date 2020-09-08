@@ -20,7 +20,7 @@ func fetchCurrentPolicy(project string) (*ProjectPolicy, error) {
 	cmd := fmt.Sprintf("gcloud projects get-iam-policy %s --format=json", project)
 	policyJson, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
-		return nil, fmt.Errorf("failed to run gcloud command to get current iam policy: error: %s", err)
+		return nil, fmt.Errorf("failed to run gcloud command to get current iam policy: %s\n%s", err, err.(*exec.ExitError).Stderr)
 	}
 
 	var policy ProjectPolicy

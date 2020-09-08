@@ -90,7 +90,7 @@ func PermitDataset(role bq.AccessRole, project string, users, datasets []string)
 func grantBQJobUser(project, user string) error {
 	policy, err := fetchCurrentPolicy(project)
 	if err != nil {
-		return fmt.Errorf("failed to fetch current policy: error %s", err)
+		return fmt.Errorf("failed to fetch current policy: %s", err)
 	}
 
 	if hasBQJobUser(*policy, user) { // already has roles/bigquery.jobUser
@@ -108,7 +108,7 @@ func grantBQJobUser(project, user string) error {
 	cmd := fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role roles/bigquery.jobUser", project, member)
 	err = exec.Command("bash", "-c", cmd).Run()
 	if err != nil {
-		return fmt.Errorf("failed to update policy bindings to grant %s roles/bigquery.jobUser: error: %s", user, err)
+		return fmt.Errorf("failed to update policy bindings to grant %s roles/bigquery.jobUser: %s", user, err)
 	}
 
 	return nil
