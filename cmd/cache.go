@@ -21,8 +21,8 @@ import (
 	"fmt"
 
 	bq "cloud.google.com/go/bigquery"
+	"golang.org/x/sync/errgroup"
 
-	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 	"google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/iterator"
@@ -39,33 +39,36 @@ var cacheCmd = &cobra.Command{
 }
 
 func runCmdCache(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
 	var metas metadata.Metas
 
-	projects, err := listProjects()
+	projects, err := listProjects(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch GCP projects: %s", err)
 	}
 
-	n := len(*projects)
-	for i, p := range *projects {
-		ds, err := listDataSets(p)
-		if err != nil {
-			return fmt.Errorf("failed to fetch BigQuery datasets: project %s, error %s", p, err)
-		}
-
-		bar := newProgressbar(fmt.Sprintf("[%v/%v][%v] caching datasets...", i+1, n, p), len(*ds))
-
-		for _, d := range *ds {
-			projectMetas, err := listMetaData(p, d)
+	eg, ctx := errgroup.WithContext(context.Background())
+	for _, p := range *projects {
+		p := p
+		eg.Go(func() error {
+			ds, err := listDataSets(ctx, p)
 			if err != nil {
-				return fmt.Errorf("failed to fetch metadata: project %s, error %s", p, err)
+				return fmt.Errorf("failed to fetch BigQuery datasets: project %s, error %s", p, err)
 			}
-			metas.Metas = append(metas.Metas, projectMetas.Metas...)
-			if err != bar.Add(1) {
-				return fmt.Errorf("failed to update progress bar: project %s, error %s", p, err)
+
+			for _, d := range *ds {
+				projectMetas, err := listMetaData(ctx, p, d)
+				if err != nil {
+					return fmt.Errorf("failed to fetch metadata: project %s, error %s", p, err)
+				}
+				metas.Metas = append(metas.Metas, projectMetas.Metas...)
 			}
-		}
-		fmt.Println("  done!")
+			return nil
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return err
 	}
 
 	err = metas.Save(config.CacheFile)
@@ -77,8 +80,7 @@ func runCmdCache(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func listProjects() (*[]string, error) {
-	ctx := context.Background()
+func listProjects(ctx context.Context) (*[]string, error) {
 	bigqueryService, err := bigquery.NewService(ctx)
 	if err != nil {
 		return nil, errors.New("failed to create bigqueryService")
@@ -111,11 +113,10 @@ func listProjects() (*[]string, error) {
 	return &projects, nil
 }
 
-func listDataSets(project string) (*[]string, error) {
-	ctx := context.Background()
+func listDataSets(ctx context.Context, project string) (*[]string, error) {
 	client, err := bq.NewClient(ctx, project)
 	if err != nil {
-		return nil, errors.New("failed to create client")
+		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
 
 	it := client.Datasets(ctx)
@@ -126,22 +127,21 @@ func listDataSets(project string) (*[]string, error) {
 			break
 		}
 		if err != nil {
-			return nil, errors.New("failed to fetch dataset")
+			return nil, fmt.Errorf("failed to fetch dataset: %w", err)
 		}
 		datasets = append(datasets, ds.DatasetID)
 	}
 	return &datasets, nil
 }
 
-func listMetaData(project, dataset string) (metadata.Metas, error) {
-	ctx := context.Background()
+func listMetaData(ctx context.Context, project, dataset string) (metadata.Metas, error) {
 	client, err := bq.NewClient(ctx, project)
 	if err != nil {
 		return metadata.Metas{}, errors.New("failed to create client")
 	}
 	md, err := client.Dataset(dataset).Metadata(ctx)
 	if err != nil {
-		return metadata.Metas{}, fmt.Errorf("failed to fetch dataset metadata: project %s,  dataset %s", project, dataset)
+		return metadata.Metas{}, fmt.Errorf("failed to fetch dataset metadata: project %s, dataset %s: %w", project, dataset, err)
 	}
 
 	var metas metadata.Metas
@@ -169,19 +169,4 @@ func isBigQueryProject(project string) bool {
 
 func init() {
 	rootCmd.AddCommand(cacheCmd)
-}
-
-func newProgressbar(description string, max int) *progressbar.ProgressBar {
-	return progressbar.NewOptions(
-		max,
-		progressbar.OptionSetWidth(20),
-		progressbar.OptionSetDescription(description),
-		progressbar.OptionSetTheme(progressbar.Theme{
-			Saucer:        "=",
-			SaucerHead:    ">",
-			SaucerPadding: " ",
-			BarStart:      "[",
-			BarEnd:        "]",
-		}),
-	)
 }
