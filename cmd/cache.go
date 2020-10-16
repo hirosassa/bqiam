@@ -19,11 +19,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	bq "cloud.google.com/go/bigquery"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/spf13/cobra"
+	"github.com/vbauerster/mpb/v5"
+	"github.com/vbauerster/mpb/v5/decor"
 	"google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/iterator"
 
@@ -47,27 +49,49 @@ func runCmdCache(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to fetch GCP projects: %s", err)
 	}
 
-	eg, ctx := errgroup.WithContext(context.Background())
-	for _, p := range *projects {
-		p := p
-		eg.Go(func() error {
-			ds, err := listDataSets(ctx, p)
-			if err != nil {
-				return fmt.Errorf("failed to fetch BigQuery datasets: project %s, error %s", p, err)
-			}
+	fatalErrors := make(chan error)
+	wgDone := make(chan bool)
 
+	var mutex sync.Mutex
+	var wg sync.WaitGroup
+	pb := mpb.NewWithContext(ctx, mpb.WithWidth(64), mpb.WithWaitGroup(&wg))
+
+	for i, p := range *projects {
+		i := i
+		p := p
+
+		ds, err := listDataSets(ctx, p)
+		if err != nil {
+			return fmt.Errorf("failed to fetch BigQuery datasets: project %s, error %s", p, err)
+		}
+
+		bar := NewBar(pb, int64(len(*ds)), fmt.Sprintf("[%v/%v][%v] caching datasets...", i+1, len(*projects), p))
+
+		go func() {
 			for _, d := range *ds {
 				projectMetas, err := listMetaData(ctx, p, d)
 				if err != nil {
-					return fmt.Errorf("failed to fetch metadata: project %s, error %s", p, err)
+					err = fmt.Errorf("failed to fetch metadata: project %s, error %s", p, err)
+					fatalErrors <- err
 				}
+				mutex.Lock()
 				metas.Metas = append(metas.Metas, projectMetas.Metas...)
+				mutex.Unlock()
+				bar.Increment()
 			}
-			return nil
-		})
+		}()
 	}
 
-	if err := eg.Wait(); err != nil {
+	go func() {
+		pb.Wait()
+		close(wgDone)
+	}()
+
+	select {
+	case <-wgDone:
+		break // carry on
+	case err := <-fatalErrors:
+		close(fatalErrors)
 		return err
 	}
 
@@ -165,6 +189,20 @@ func isBigQueryProject(project string) bool {
 		}
 	}
 	return false
+}
+
+func NewBar(pb *mpb.Progress, max int64, name string) *mpb.Bar {
+	return pb.AddBar(max,
+		mpb.PrependDecorators(
+			decor.Name(name),
+			decor.Percentage(decor.WCSyncSpace),
+		),
+		mpb.AppendDecorators(
+			decor.OnComplete(
+				decor.Elapsed(decor.ET_STYLE_GO, decor.WCSyncSpace), "done",
+			),
+		),
+	)
 }
 
 func init() {
