@@ -22,6 +22,7 @@ import (
 
 	bq "cloud.google.com/go/bigquery"
 
+	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 	"google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/iterator"
@@ -45,11 +46,14 @@ func runCmdCache(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to fetch GCP projects: %s", err)
 	}
 
-	for _, p := range *projects {
+	n := len(*projects)
+	for i, p := range *projects {
 		ds, err := listDataSets(p)
 		if err != nil {
 			return fmt.Errorf("failed to fetch BigQuery datasets: project %s, error %s", p, err)
 		}
+
+		bar := newProgressbar(fmt.Sprintf("[%v/%v][%v] caching datasets...", i+1, n, p), len(*ds))
 
 		for _, d := range *ds {
 			projectMetas, err := listMetaData(p, d)
@@ -57,7 +61,11 @@ func runCmdCache(cmd *cobra.Command, args []string) error {
 				return fmt.Errorf("failed to fetch metadata: project %s, error %s", p, err)
 			}
 			metas.Metas = append(metas.Metas, projectMetas.Metas...)
+			if err != bar.Add(1) {
+				return fmt.Errorf("failed to update progress bar: project %s, error %s", p, err)
+			}
 		}
+		fmt.Println("  done!")
 	}
 
 	err = metas.Save(config.CacheFile)
@@ -161,4 +169,19 @@ func isBigQueryProject(project string) bool {
 
 func init() {
 	rootCmd.AddCommand(cacheCmd)
+}
+
+func newProgressbar(description string, max int) *progressbar.ProgressBar {
+	return progressbar.NewOptions(
+		max,
+		progressbar.OptionSetWidth(20),
+		progressbar.OptionSetDescription(description),
+		progressbar.OptionSetTheme(progressbar.Theme{
+			Saucer:        "=",
+			SaucerHead:    ">",
+			SaucerPadding: " ",
+			BarStart:      "[",
+			BarEnd:        "]",
+		}),
+	)
 }
