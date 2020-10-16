@@ -61,7 +61,9 @@ func runCmdCache(cmd *cobra.Command, args []string) error {
 				return fmt.Errorf("failed to fetch metadata: project %s, error %s", p, err)
 			}
 			metas.Metas = append(metas.Metas, projectMetas.Metas...)
-			bar.Add(1)
+			if err != bar.Add(1) {
+				return fmt.Errorf("failed to update progress bar: project %s, error %s", p, err)
+			}
 		}
 		fmt.Println("  done!")
 	}
