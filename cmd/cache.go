@@ -54,7 +54,7 @@ func runCmdCache(cmd *cobra.Command, args []string) error {
 
 	var mutex sync.Mutex
 	var wg sync.WaitGroup
-	pb := mpb.NewWithContext(ctx, mpb.WithWidth(64), mpb.WithWaitGroup(&wg))
+	pb := mpb.NewWithContext(ctx, mpb.WithWidth(32), mpb.WithWaitGroup(&wg))
 
 	for i, p := range *projects {
 		i := i
