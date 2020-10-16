@@ -11,16 +11,13 @@ require (
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/rs/zerolog v1.20.0
-	github.com/schollz/progressbar/v3 v3.6.1
 	github.com/spf13/afero v1.3.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.1.0
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.7.1
-	github.com/ugorji/go v1.1.4 // indirect
-	github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77 // indirect
-	golang.org/x/text v0.3.3 // indirect
+	github.com/vbauerster/mpb/v5 v5.3.0
+	golang.org/x/sys v0.0.0-20201009025420-dfb3f7c4e634 // indirect
 	google.golang.org/api v0.33.0
 	gopkg.in/djherbis/times.v1 v1.2.0
 	gopkg.in/ini.v1 v1.57.0 // indirect

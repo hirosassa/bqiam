@@ -19,11 +19,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	bq "cloud.google.com/go/bigquery"
 
-	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
+	"github.com/vbauerster/mpb/v5"
+	"github.com/vbauerster/mpb/v5/decor"
 	"google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/iterator"
 
@@ -39,33 +41,58 @@ var cacheCmd = &cobra.Command{
 }
 
 func runCmdCache(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
 	var metas metadata.Metas
 
-	projects, err := listProjects()
+	projects, err := listProjects(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch GCP projects: %s", err)
 	}
 
-	n := len(*projects)
+	fatalErrors := make(chan error)
+	wgDone := make(chan bool)
+
+	var mutex sync.Mutex
+	var wg sync.WaitGroup
+	pb := mpb.NewWithContext(ctx, mpb.WithWidth(32), mpb.WithWaitGroup(&wg))
+
 	for i, p := range *projects {
-		ds, err := listDataSets(p)
+		i := i
+		p := p
+
+		ds, err := listDataSets(ctx, p)
 		if err != nil {
 			return fmt.Errorf("failed to fetch BigQuery datasets: project %s, error %s", p, err)
 		}
 
-		bar := newProgressbar(fmt.Sprintf("[%v/%v][%v] caching datasets...", i+1, n, p), len(*ds))
+		bar := NewBar(pb, int64(len(*ds)), fmt.Sprintf("[%v/%v][%v] caching datasets...", i+1, len(*projects), p))
 
-		for _, d := range *ds {
-			projectMetas, err := listMetaData(p, d)
-			if err != nil {
-				return fmt.Errorf("failed to fetch metadata: project %s, error %s", p, err)
+		go func() {
+			for _, d := range *ds {
+				projectMetas, err := listMetaData(ctx, p, d)
+				if err != nil {
+					err = fmt.Errorf("failed to fetch metadata: project %s, error %s", p, err)
+					fatalErrors <- err
+				}
+				mutex.Lock()
+				metas.Metas = append(metas.Metas, projectMetas.Metas...)
+				mutex.Unlock()
+				bar.Increment()
 			}
-			metas.Metas = append(metas.Metas, projectMetas.Metas...)
-			if err != bar.Add(1) {
-				return fmt.Errorf("failed to update progress bar: project %s, error %s", p, err)
-			}
-		}
-		fmt.Println("  done!")
+		}()
+	}
+
+	go func() {
+		pb.Wait()
+		close(wgDone)
+	}()
+
+	select {
+	case <-wgDone:
+		break // carry on
+	case err := <-fatalErrors:
+		close(fatalErrors)
+		return err
 	}
 
 	err = metas.Save(config.CacheFile)
@@ -77,8 +104,7 @@ func runCmdCache(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func listProjects() (*[]string, error) {
-	ctx := context.Background()
+func listProjects(ctx context.Context) (*[]string, error) {
 	bigqueryService, err := bigquery.NewService(ctx)
 	if err != nil {
 		return nil, errors.New("failed to create bigqueryService")
@@ -111,11 +137,10 @@ func listProjects() (*[]string, error) {
 	return &projects, nil
 }
 
-func listDataSets(project string) (*[]string, error) {
-	ctx := context.Background()
+func listDataSets(ctx context.Context, project string) (*[]string, error) {
 	client, err := bq.NewClient(ctx, project)
 	if err != nil {
-		return nil, errors.New("failed to create client")
+		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
 
 	it := client.Datasets(ctx)
@@ -126,22 +151,21 @@ func listDataSets(project string) (*[]string, error) {
 			break
 		}
 		if err != nil {
-			return nil, errors.New("failed to fetch dataset")
+			return nil, fmt.Errorf("failed to fetch dataset: %w", err)
 		}
 		datasets = append(datasets, ds.DatasetID)
 	}
 	return &datasets, nil
 }
 
-func listMetaData(project, dataset string) (metadata.Metas, error) {
-	ctx := context.Background()
+func listMetaData(ctx context.Context, project, dataset string) (metadata.Metas, error) {
 	client, err := bq.NewClient(ctx, project)
 	if err != nil {
 		return metadata.Metas{}, errors.New("failed to create client")
 	}
 	md, err := client.Dataset(dataset).Metadata(ctx)
 	if err != nil {
-		return metadata.Metas{}, fmt.Errorf("failed to fetch dataset metadata: project %s,  dataset %s", project, dataset)
+		return metadata.Metas{}, fmt.Errorf("failed to fetch dataset metadata: project %s, dataset %s: %w", project, dataset, err)
 	}
 
 	var metas metadata.Metas
@@ -167,21 +191,20 @@ func isBigQueryProject(project string) bool {
 	return false
 }
 
-func init() {
-	rootCmd.AddCommand(cacheCmd)
+func NewBar(pb *mpb.Progress, max int64, name string) *mpb.Bar {
+	return pb.AddBar(max,
+		mpb.PrependDecorators(
+			decor.Name(name),
+			decor.Percentage(decor.WCSyncSpace),
+		),
+		mpb.AppendDecorators(
+			decor.OnComplete(
+				decor.Elapsed(decor.ET_STYLE_GO, decor.WCSyncSpace), "done",
+			),
+		),
+	)
 }
 
-func newProgressbar(description string, max int) *progressbar.ProgressBar {
-	return progressbar.NewOptions(
-		max,
-		progressbar.OptionSetWidth(20),
-		progressbar.OptionSetDescription(description),
-		progressbar.OptionSetTheme(progressbar.Theme{
-			Saucer:        "=",
-			SaucerHead:    ">",
-			SaucerPadding: " ",
-			BarStart:      "[",
-			BarEnd:        "]",
-		}),
-	)
+func init() {
+	rootCmd.AddCommand(cacheCmd)
 }
