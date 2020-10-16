@@ -53,7 +53,7 @@ func runCmdCache(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to fetch BigQuery datasets: project %s, error %s", p, err)
 		}
 
-		bar := newProgressbar(fmt.Sprintf("[%v/%v][%v] caching Datasets...", i+1, n, p), len(*ds))
+		bar := newProgressbar(fmt.Sprintf("[%v/%v][%v] caching datasets...", i+1, n, p), len(*ds))
 
 		for _, d := range *ds {
 			projectMetas, err := listMetaData(p, d)
