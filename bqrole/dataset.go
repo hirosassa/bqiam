@@ -50,9 +50,14 @@ func PermitDataset(role bq.AccessRole, project string, users, datasets []string)
 
 	defer client.Close()
 
-	// grant roles/bigquery.jobUser if needed
+	// grant roles/bigquery.jobUser and roles/bigquery.user if needed
 	for _, user := range users {
-		err = grantBQJobUser(project, user)
+		err = grantBQRole(project, user, "roles/bigquery.jobUser")
+		if err != nil {
+			return err
+		}
+
+		err = grantBQRole(project, user, "roles/bigquery.user")
 		if err != nil {
 			return err
 		}
@@ -86,15 +91,15 @@ func PermitDataset(role bq.AccessRole, project string, users, datasets []string)
 	return nil
 }
 
-// grantBQJobUser grants user roles/bigquery.jobUser permission to run job on BigQuery
-func grantBQJobUser(project, user string) error {
+// grantBQRole grants user roles/bigquery permission
+func grantBQRole(project, user string, role string) error {
 	policy, err := fetchCurrentPolicy(project)
 	if err != nil {
 		return fmt.Errorf("failed to fetch current policy: %s", err)
 	}
 
-	if hasBQJobUser(*policy, user) { // already has roles/bigquery.jobUser
-		log.Info().Msgf("%s already have bigquery.jobUser\n", user)
+	if hasBQRole(*policy, user, role) {
+		log.Info().Msgf("%s already have %s\n", user, role)
 		return nil
 	}
 
@@ -105,18 +110,18 @@ func grantBQJobUser(project, user string) error {
 		member = "user:" + user
 	}
 
-	cmd := fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role roles/bigquery.jobUser", project, member)
+	cmd := fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role %s", project, member, role)
 	err = exec.Command("bash", "-c", cmd).Run()
 	if err != nil {
-		return fmt.Errorf("failed to update policy bindings to grant %s roles/bigquery.jobUser: %s", user, err)
+		return fmt.Errorf("failed to update policy bindings to grant %s %s: %s", user, role, err)
 	}
 
 	return nil
 }
 
-func hasBQJobUser(p ProjectPolicy, user string) bool {
+func hasBQRole(p ProjectPolicy, user string, role string) bool {
 	for _, b := range p.Bindings {
-		if b.Role == "roles/bigquery.jobUser" {
+		if b.Role == role {
 			for _, m := range b.Members {
 				if strings.HasSuffix(m, user) { // format of m is (user|serviceAccount):[user-email]
 					return true

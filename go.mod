@@ -5,7 +5,6 @@ go 1.15
 require (
 	cloud.google.com/go/bigquery v1.12.0
 	github.com/BurntSushi/toml v0.3.1
-	github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
