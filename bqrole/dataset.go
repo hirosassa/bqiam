@@ -69,7 +69,7 @@ func PermitDataset(role bq.AccessRole, project string, users, datasets []string)
 			err := updateDatasetMetadata(ctx, client, role, dataset, user, bq.UserEmailEntity)
 			if err != nil {
 				// try as group account
-				log.Warn().Msgf("failed to permit using bq.UserEmailEntity, try bq.GroupEmailEnity")
+				log.Warn().Msg("failed to permit using bq.UserEmailEntity, try bq.GroupEmailEnity")
 				err = updateDatasetMetadata(ctx, client, role, dataset, user, bq.GroupEmailEntity)
 				if err != nil {
 					return err
@@ -104,6 +104,7 @@ func grantBQRole(project, user string, role string) error {
 	cmd := fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role %s", project, member, role)
 	out, err := exec.Command("bash", "-c", cmd).CombinedOutput()
 	if strings.Contains(string(out), "INVALID_ARGUMENT") { // try to bind to "group" account
+		log.Warn().Msg("failed to permit as user account, try group account")
 		member = "group:" + user
 		cmd = fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role %s", project, member, role)
 		err = exec.Command("bash", "-c", cmd).Run()
