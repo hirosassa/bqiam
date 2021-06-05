@@ -66,24 +66,15 @@ func PermitDataset(role bq.AccessRole, project string, users, datasets []string)
 	// grant permissions for each datasets
 	for _, dataset := range datasets {
 		for _, user := range users {
-			ds := client.Dataset(dataset)
-			meta, err := ds.Metadata(ctx)
+			err := updateDatasetMetadata(ctx, client, role, dataset, user, bq.UserEmailEntity)
 			if err != nil {
-				return err
+				// try as group account
+				log.Warn().Msgf("failed to permit using bq.UserEmailEntity, try bq.GroupEmailEnity")
+				err = updateDatasetMetadata(ctx, client, role, dataset, user, bq.GroupEmailEntity)
+				if err != nil {
+					return err
+				}
 			}
-
-			update := bq.DatasetMetadataToUpdate{
-				Access: append(meta.Access, &bq.AccessEntry{
-					Role:       role,
-					EntityType: bq.UserEmailEntity,
-					Entity:     user,
-				}),
-			}
-
-			if _, err := ds.Update(ctx, update, meta.ETag); err != nil {
-				return err
-			}
-
 			fmt.Printf("Permit %s to %s access as %s\n", user, dataset, role)
 		}
 	}
@@ -111,11 +102,38 @@ func grantBQRole(project, user string, role string) error {
 	}
 
 	cmd := fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role %s", project, member, role)
-	err = exec.Command("bash", "-c", cmd).Run()
+	out, err := exec.Command("bash", "-c", cmd).CombinedOutput()
+	if strings.Contains(string(out), "INVALID_ARGUMENT") { // try to bind to "group" account
+		member = "group:" + user
+		cmd = fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role %s", project, member, role)
+		err = exec.Command("bash", "-c", cmd).Run()
+	}
+
 	if err != nil {
 		return fmt.Errorf("failed to update policy bindings to grant %s %s: %s", user, role, err)
 	}
 
+	return nil
+}
+
+func updateDatasetMetadata(ctx context.Context, client *bq.Client, role bq.AccessRole, dataset string, user string, entityType bq.EntityType) error {
+	ds := client.Dataset(dataset)
+	meta, err := ds.Metadata(ctx)
+	if err != nil {
+		return err
+	}
+
+	update := bq.DatasetMetadataToUpdate{
+		Access: append(meta.Access, &bq.AccessEntry{
+			Role:       role,
+			EntityType: entityType,
+			Entity:     user,
+		}),
+	}
+
+	if _, err := ds.Update(ctx, update, meta.ETag); err != nil {
+		return err
+	}
 	return nil
 }
 
