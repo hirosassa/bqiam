@@ -88,7 +88,7 @@ func PermitDataset(role bq.AccessRole, project string, users, datasets []string)
 
 // grantBQJobUser grants user roles/bigquery.jobUser permission to run job on BigQuery
 func grantBQJobUser(project, user string) error {
-	policy, err := fetchCurrentPolicy(project)
+	policy, err := FetchCurrentPolicy(project)
 	if err != nil {
 		return fmt.Errorf("failed to fetch current policy: %s", err)
 	}

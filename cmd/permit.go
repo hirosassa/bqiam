@@ -25,8 +25,11 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(newPermitCommand())
+	permitCommand = newPermitCommand()
+	rootCmd.AddCommand(permitCommand)
 }
+
+var permitCommand *cobra.Command
 
 func newPermitCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -59,7 +62,8 @@ func newPermitProjectCmd() *cobra.Command {
 For example:
 
 bqiam project READER -p bq-project-id -u user1@email.com -u user2@email.com`,
-		RunE: runPermitProjectCmd,
+		RunE:      runPermitProjectCmd,
+		ValidArgs: []string{"READER", "WRITER"},
 	}
 
 	cmd.Flags().StringP("project", "p", "", "Specify GCP project id")
@@ -69,6 +73,9 @@ bqiam project READER -p bq-project-id -u user1@email.com -u user2@email.com`,
 	}
 
 	cmd.Flags().StringSliceP("users", "u", []string{}, "Specify user email(s)")
+
+	_ = registerProjectsCompletions(cmd)
+	_ = registerUsersCompletions(cmd)
 
 	return cmd
 }
@@ -109,7 +116,8 @@ func newPermitDatasetCmd() *cobra.Command {
 For example:
 
 bqiam dataset READER -p bq-project-id -u user1@email.com -u user2@email.com -d dataset1 -d dataset2`,
-		RunE: runPermitDatasetCmd,
+		RunE:      runPermitDatasetCmd,
+		ValidArgs: []string{"READER", "WRITER", "OWNER"},
 	}
 
 	cmd.Flags().StringP("project", "p", "", "Specify GCP project id")
@@ -120,6 +128,10 @@ bqiam dataset READER -p bq-project-id -u user1@email.com -u user2@email.com -d d
 
 	cmd.Flags().StringSliceP("users", "u", []string{}, "Specify user email(s)")
 	cmd.Flags().StringSliceP("datasets", "d", []string{}, "Specify dataset(s)")
+
+	_ = registerProjectsCompletions(cmd)
+	_ = registerDatasetsCompletions(cmd)
+	_ = registerUsersCompletions(cmd)
 
 	return cmd
 }

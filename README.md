@@ -70,3 +70,27 @@ Permit user2@email.com to bq-project-id access as READER
 ...
 
 ```
+
+## Completion
+Completion is available for bash or zsh.
+Download projects, datasets, users list data via GCP API.
+
+### bash
+```
+bqiam completion bash > /path/to/bash-completion/completions/bqiam
+```
+
+### zsh
+```
+bqiam completion bash > /path/to/zsh-completions/_bqiam
+```
+
+### Updating data
+```
+bqiam completion
+```
+
+
+### Limitaion
+Completion data file is placed on `~/.bqiam-completion-file.toml`.
+This path is unchangeable.
