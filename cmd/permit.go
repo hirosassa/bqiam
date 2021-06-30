@@ -61,7 +61,7 @@ func newPermitProjectCmd() *cobra.Command {
 		Long: `permit project permits some users to some project-wide access as READER or WRITER or OWNER
 For example:
 
-bqiam project READER -p bq-project-id -u user1@email.com -u user2@email.com`,
+bqiam permit project READER -p bq-project-id -u user1@email.com -u user2@email.com`,
 		RunE:      runPermitProjectCmd,
 		ValidArgs: []string{"READER", "WRITER"},
 	}
@@ -115,7 +115,7 @@ func newPermitDatasetCmd() *cobra.Command {
 		Long: `permits some users to some datasets access as READER or WRITER or OWNER
 For example:
 
-bqiam dataset READER -p bq-project-id -u user1@email.com -u user2@email.com -d dataset1 -d dataset2`,
+bqiam permit dataset READER -p bq-project-id -u user1@email.com -u user2@email.com -d dataset1 -d dataset2`,
 		RunE:      runPermitDatasetCmd,
 		ValidArgs: []string{"READER", "WRITER", "OWNER"},
 	}
