@@ -75,8 +75,9 @@ func newCompletionZshCmd() *cobra.Command {
 }
 
 func completionFilePath() string {
-	// Currently, the config by viper is loaded after loading commands.
-	// Loading completion file is on loading commands, so we can't specify config file path by config viper.
+	// Currently, completion file path is fixed on ~/.bqiam-completion-file.toml
+	// The config by viper is loaded after loading commands.
+	// Completion file is needed to load on loading commands, so we can't specify config file path by viper config.
 	home, err := homedir.Dir()
 	if err != nil {
 		fmt.Println(err)
