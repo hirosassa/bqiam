@@ -89,8 +89,3 @@ bqiam completion bash > /path/to/zsh-completions/_bqiam
 ```
 bqiam completion
 ```
-
-
-### Limitaion
-Completion data file is placed on `~/.bqiam-completion-file.toml`.
-This path is unchangeable.
