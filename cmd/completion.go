@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
 	"strings"
 
 	"github.com/hirosassa/bqiam/bqrole"
 	"github.com/hirosassa/bqiam/completion"
 
-	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +23,7 @@ func newCompletionCmd() *cobra.Command {
 		Use:   "completion",
 		Short: "Generates shell completion scripts",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("creating completion file: %s\n", completionFilePath())
+			fmt.Printf("creating completion file: %s\n", config.CompletionFilePath)
 			if err := createCompletionFile(); err != nil {
 				panic(err)
 			}
@@ -74,19 +72,6 @@ func newCompletionZshCmd() *cobra.Command {
 	return cmd
 }
 
-func completionFilePath() string {
-	// Currently, completion file path is fixed on ~/.bqiam-completion-file.toml
-	// The config by viper is loaded after loading commands.
-	// Completion file is needed to load on loading commands, so we can't specify config file path by viper config.
-	home, err := homedir.Dir()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	return path.Join(home, ".bqiam-completion-file.toml")
-}
-
 func createCompletionFile() error {
 	var list completion.List
 	ctx := context.Background()
@@ -120,7 +105,7 @@ func createCompletionFile() error {
 
 	list.DisplaySizeLimit = completionDisplaySizeLimit
 
-	if err := list.Save(completionFilePath()); err != nil {
+	if err := list.Save(config.CompletionFilePath); err != nil {
 		return err
 	}
 
@@ -128,12 +113,12 @@ func createCompletionFile() error {
 }
 
 func registerDatasetsCompletions(cmd *cobra.Command) error {
-	var list completion.List
-	if err := list.Load(completionFilePath()); err != nil {
-		return err
-	}
-
 	if err := cmd.RegisterFlagCompletionFunc("datasets", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		var list completion.List
+		if err := list.Load(config.CompletionFilePath); err != nil {
+			return nil, cobra.ShellCompDirectiveDefault
+		}
+
 		var res []string
 
 		for _, d := range list.Datasets {
@@ -153,13 +138,12 @@ func registerDatasetsCompletions(cmd *cobra.Command) error {
 }
 
 func registerProjectsCompletions(cmd *cobra.Command) error {
-	var list completion.List
-	if err := list.Load(completionFilePath()); err != nil {
-		return err
-	}
-
 	if err := cmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var res []string
+		var list completion.List
+		if err := list.Load(config.CompletionFilePath); err != nil {
+			return nil, cobra.ShellCompDirectiveDefault
+		}
 
 		for _, p := range list.Projects {
 			if strings.HasPrefix(p, toComplete) {
@@ -178,12 +162,12 @@ func registerProjectsCompletions(cmd *cobra.Command) error {
 }
 
 func registerUsersCompletions(cmd *cobra.Command) error {
-	var list completion.List
-	if err := list.Load(completionFilePath()); err != nil {
-		return err
-	}
-
 	if err := cmd.RegisterFlagCompletionFunc("users", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		var list completion.List
+		if err := list.Load(config.CompletionFilePath); err != nil {
+			return nil, cobra.ShellCompDirectiveDefault
+		}
+
 		var res []string
 
 		for _, u := range list.Users {
