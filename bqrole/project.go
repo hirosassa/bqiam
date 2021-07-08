@@ -59,7 +59,7 @@ func PermitProject(role, project string, users []string) error {
 }
 
 func grantProjectRole(project, user, role string) error {
-	policy, err := fetchCurrentPolicy(project)
+	policy, err := FetchCurrentPolicy(project)
 	if err != nil {
 		return fmt.Errorf("failed to fetch current policy: %s", err)
 	}

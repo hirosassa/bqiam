@@ -3,8 +3,9 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -15,9 +16,10 @@ var cfgFile string
 var config Config
 
 type Config struct {
-	BigqueryProjects []string
-	CacheFile        string
-	CacheRefreshHour int
+	BigqueryProjects   []string
+	CacheFile          string
+	CacheRefreshHour   int
+	CompletionFilePath string
 }
 
 var verbose, debug bool // for verbose and debug output
@@ -53,6 +55,7 @@ func initConfig() {
 		// Search config in home directory with name ".bqiam" (without extension).
 		viper.AddConfigPath(home)
 		viper.SetConfigName(".bqiam")
+		viper.SetDefault("CompletionFilePath", path.Join(home, ".bqiam-completion-file.toml"))
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match

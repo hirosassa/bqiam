@@ -16,7 +16,7 @@ type ProjectPolicy struct {
 	Version int    `json:"version"`
 }
 
-func fetchCurrentPolicy(project string) (*ProjectPolicy, error) {
+func FetchCurrentPolicy(project string) (*ProjectPolicy, error) {
 	cmd := fmt.Sprintf("gcloud projects get-iam-policy %s --format=json", project)
 	policyJson, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
