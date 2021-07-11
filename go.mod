@@ -1,6 +1,6 @@
 module github.com/hirosassa/bqiam
 
-go 1.15
+go 1.16
 
 require (
 	cloud.google.com/go/bigquery v1.16.0
