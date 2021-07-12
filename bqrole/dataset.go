@@ -34,6 +34,7 @@ func PermitDataset(role bq.AccessRole, project string, users, datasets []string)
 		return errors.New("failed to create bigquery Client")
 	}
 
+	fmt.Printf("PERMIT following roles\n")
 	fmt.Printf("project_id: %s\n", project)
 	fmt.Printf("role:       %s\n", role)
 	fmt.Printf("datasets:   %s\n", datasets)
@@ -66,16 +67,59 @@ func PermitDataset(role bq.AccessRole, project string, users, datasets []string)
 	// grant permissions for each datasets
 	for _, dataset := range datasets {
 		for _, user := range users {
-			err := updateDatasetMetadata(ctx, client, role, dataset, user, bq.UserEmailEntity)
+			err := grantDatasetPermission(ctx, client, role, dataset, user, bq.UserEmailEntity)
 			if err != nil {
 				// try as group account
 				log.Warn().Msg("failed to permit using bq.UserEmailEntity, try bq.GroupEmailEnity")
-				err = updateDatasetMetadata(ctx, client, role, dataset, user, bq.GroupEmailEntity)
+				err = grantDatasetPermission(ctx, client, role, dataset, user, bq.GroupEmailEntity)
 				if err != nil {
 					return err
 				}
 			}
 			fmt.Printf("Permit %s to %s access as %s\n", user, dataset, role)
+		}
+	}
+
+	return nil
+}
+
+func RevokeDataset(role bq.AccessRole, project string, users, datasets []string) error {
+	ctx := context.Background()
+	client, err := bq.NewClient(ctx, project)
+	if err != nil {
+		return errors.New("failed to create bigquery Client")
+	}
+
+	fmt.Printf("REVOKE following roles\n")
+	fmt.Printf("project_id: %s\n", project)
+	fmt.Printf("role:       %s\n", role)
+	fmt.Printf("datasets:   %s\n", datasets)
+	fmt.Printf("users:      %s\n", users)
+	fmt.Printf("Are you sure? [y/n]")
+
+	reader := bufio.NewReader(os.Stdin)
+	res, err := reader.ReadString('\n')
+
+	if err != nil || strings.TrimSpace(res) != "y" {
+		fmt.Println("Abort.")
+		return nil
+	}
+
+	defer client.Close()
+
+	// revoke permissions for each datasets
+	for _, dataset := range datasets {
+		for _, user := range users {
+			err := revokeDatasetPermission(ctx, client, role, dataset, user, bq.UserEmailEntity)
+			if err != nil {
+				// try as group account
+				log.Warn().Msg("failed to revoke using bq.UserEmailEntity, try bq.GroupEmailEnity")
+				err = revokeDatasetPermission(ctx, client, role, dataset, user, bq.GroupEmailEntity)
+				if err != nil {
+					return err
+				}
+			}
+			fmt.Printf("Revoke %s to %s access as %s\n", user, dataset, role)
 		}
 	}
 
@@ -117,7 +161,7 @@ func grantBQRole(project, user string, role string) error {
 	return nil
 }
 
-func updateDatasetMetadata(ctx context.Context, client *bq.Client, role bq.AccessRole, dataset string, user string, entityType bq.EntityType) error {
+func grantDatasetPermission(ctx context.Context, client *bq.Client, role bq.AccessRole, dataset string, user string, entityType bq.EntityType) error {
 	ds := client.Dataset(dataset)
 	meta, err := ds.Metadata(ctx)
 	if err != nil {
@@ -132,6 +176,28 @@ func updateDatasetMetadata(ctx context.Context, client *bq.Client, role bq.Acces
 		}),
 	}
 
+	if _, err := ds.Update(ctx, update, meta.ETag); err != nil {
+		return err
+	}
+	return nil
+}
+
+func revokeDatasetPermission(ctx context.Context, client *bq.Client, role bq.AccessRole, dataset string, user string, entityType bq.EntityType) error {
+	ds := client.Dataset(dataset)
+	meta, err := ds.Metadata(ctx)
+	if err != nil {
+		return err
+	}
+
+	var accesses []*bq.AccessEntry
+	for _, access := range meta.Access {
+		if access.EntityType == entityType && access.Entity == user && access.Role == role {
+			continue // skipping the target entity
+		}
+		accesses = append(accesses, access)
+	}
+
+	update := bq.DatasetMetadataToUpdate{Access: accesses}
 	if _, err := ds.Update(ctx, update, meta.ETag); err != nil {
 		return err
 	}
