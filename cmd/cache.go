@@ -68,8 +68,14 @@ func runCmdCache(cmd *cobra.Command, args []string) error {
 		bar := NewBar(pb, int64(len(*ds)), fmt.Sprintf("[%v/%v][%v] caching datasets...", i+1, len(*projects), p))
 
 		go func() {
+			client, err := bq.NewClient(ctx, p)
+			if err != nil {
+				fatalErrors <- err
+			}
+			defer client.Close()
+
 			for _, d := range *ds {
-				projectMetas, err := listMetaData(ctx, p, d)
+				projectMetas, err := listMetaData(ctx, client, p, d)
 				if err != nil {
 					err = fmt.Errorf("failed to fetch metadata: project %s, error %s", p, err)
 					fatalErrors <- err
@@ -142,6 +148,7 @@ func listDataSets(ctx context.Context, project string) (*[]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
+	defer client.Close()
 
 	it := client.Datasets(ctx)
 	var datasets []string
@@ -158,11 +165,7 @@ func listDataSets(ctx context.Context, project string) (*[]string, error) {
 	return &datasets, nil
 }
 
-func listMetaData(ctx context.Context, project, dataset string) (metadata.Metas, error) {
-	client, err := bq.NewClient(ctx, project)
-	if err != nil {
-		return metadata.Metas{}, errors.New("failed to create client")
-	}
+func listMetaData(ctx context.Context, client *bq.Client, project, dataset string) (metadata.Metas, error) {
 	md, err := client.Dataset(dataset).Metadata(ctx)
 	if err != nil {
 		return metadata.Metas{}, fmt.Errorf("failed to fetch dataset metadata: project %s, dataset %s: %w", project, dataset, err)
