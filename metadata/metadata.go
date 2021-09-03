@@ -22,7 +22,7 @@ type Meta struct {
 // Load reads cacheFile.
 func (ms *Metas) Load(cacheFile string) error {
 	if _, err := toml.DecodeFile(cacheFile, ms); err != nil {
-		return fmt.Errorf("Failed to load medadata cache file. %v", err)
+		return fmt.Errorf("Failed to load medadata cache file: %v\n  (use `bqiam cache` to create or update bigquery datasts' metadata)", err)
 	}
 	return nil
 }
