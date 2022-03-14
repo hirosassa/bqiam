@@ -75,17 +75,19 @@ Permit user2@email.com to bq-project-id access as READER
 Completion is available for bash or zsh.
 Download projects, datasets, users list data via GCP API.
 
-### bash
+### Set up completion configurations
+#### bash
 ```
 bqiam completion bash > /path/to/bash-completion/completions/bqiam
 ```
 
-### zsh
+#### zsh
 ```
-bqiam completion bash > /path/to/zsh-completions/_bqiam
+bqiam completion zsh > /path/to/zsh-completions/_bqiam
 ```
 
-### Updating data
+### Prefetch / Updating completion data
+Completion candidate data is downloaded to `~/.bqiam-completion-file.toml` by following command.
 ```
 bqiam completion
 ```
