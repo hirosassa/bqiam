@@ -51,3 +51,5 @@ require (
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
+
+replace github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt v3.2.2+incompatible
