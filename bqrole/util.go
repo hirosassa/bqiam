@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"github.com/rs/zerolog/log"
 )
 
 type ProjectPolicy struct {
@@ -18,10 +20,14 @@ type ProjectPolicy struct {
 
 func FetchCurrentPolicy(project string) (*ProjectPolicy, error) {
 	cmd := fmt.Sprintf("gcloud projects get-iam-policy %s --format=json", project)
+	log.Info().Msg(fmt.Sprintf("execute: %s", cmd))
+
 	policyJson, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to run gcloud command to get current iam policy: %s\n%s", err, err.(*exec.ExitError).Stderr)
 	}
+
+	log.Info().Msg(fmt.Sprintf("finish: %s", cmd))
 
 	var policy ProjectPolicy
 	err = json.Unmarshal(policyJson, &policy)

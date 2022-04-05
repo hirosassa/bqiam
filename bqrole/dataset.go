@@ -53,14 +53,19 @@ func PermitDataset(role bq.AccessRole, project string, users, datasets []string,
 
 	defer client.Close()
 
+	policy, err := FetchCurrentPolicy(project)
+	if err != nil {
+		return fmt.Errorf("failed to fetch current policy: %s", err)
+	}
+
 	// grant roles/bigquery.jobUser and roles/bigquery.user if needed
 	for _, user := range users {
-		err = grantBQRole(project, user, "roles/bigquery.jobUser")
+		err = grantBQRole(project, user, "roles/bigquery.jobUser", policy)
 		if err != nil {
 			return err
 		}
 
-		err = grantBQRole(project, user, "roles/bigquery.user")
+		err = grantBQRole(project, user, "roles/bigquery.user", policy)
 		if err != nil {
 			return err
 		}
@@ -86,13 +91,8 @@ func PermitDataset(role bq.AccessRole, project string, users, datasets []string,
 }
 
 // grantBQRole grants user roles/bigquery permission
-func grantBQRole(project, user string, role string) error {
-	policy, err := FetchCurrentPolicy(project)
-	if err != nil {
-		return fmt.Errorf("failed to fetch current policy: %s", err)
-	}
-
-	if hasBQRole(*policy, user, role) {
+func grantBQRole(project, user, role string, policy *ProjectPolicy) error {
+	if hasBQRole(policy, user, role) {
 		log.Info().Msgf("%s already have %s\n", user, role)
 		return nil
 	}
@@ -141,7 +141,7 @@ func updateDatasetMetadata(ctx context.Context, client *bq.Client, role bq.Acces
 	return nil
 }
 
-func hasBQRole(p ProjectPolicy, user string, role string) bool {
+func hasBQRole(p *ProjectPolicy, user string, role string) bool {
 	for _, b := range p.Bindings {
 		if b.Role == role {
 			for _, m := range b.Members {

@@ -49,9 +49,14 @@ func PermitProject(role, project string, users []string, yes bool) error {
 
 	defer client.Close()
 
+	policy, err := FetchCurrentPolicy(project)
+	if err != nil {
+		return fmt.Errorf("failed to fetch current policy: %s", err)
+	}
+
 	// grant project-wide role if needed
 	for _, user := range users {
-		err = grantProjectRole(project, user, role)
+		err = grantProjectRole(project, user, role, policy)
 		if err != nil {
 			return err
 		}
@@ -61,13 +66,8 @@ func PermitProject(role, project string, users []string, yes bool) error {
 	return nil
 }
 
-func grantProjectRole(project, user, role string) error {
-	policy, err := FetchCurrentPolicy(project)
-	if err != nil {
-		return fmt.Errorf("failed to fetch current policy: %s", err)
-	}
-
-	if hasProjectRole(*policy, user, role) { // already has roles/viewer
+func grantProjectRole(project, user, role string, policy *ProjectPolicy) error {
+	if hasProjectRole(policy, user, role) { // already has roles/viewer
 		log.Info().Msgf("%s already has a role: %s, project: %s. skipped.", user, role, project)
 		return nil
 	}
@@ -80,15 +80,14 @@ func grantProjectRole(project, user, role string) error {
 	}
 
 	cmd := fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role %s", project, member, role)
-	err = exec.Command("bash", "-c", cmd).Run()
-	if err != nil {
+	if err := exec.Command("bash", "-c", cmd).Run(); err != nil {
 		return fmt.Errorf("failed to update policy bindings to grant %s %s: %s\n%s", user, role, err, err.(*exec.ExitError).Stderr)
 	}
 
 	return nil
 }
 
-func hasProjectRole(p ProjectPolicy, user, role string) bool {
+func hasProjectRole(p *ProjectPolicy, user, role string) bool {
 	for _, b := range p.Bindings {
 		if b.Role == role {
 			for _, m := range b.Members {
