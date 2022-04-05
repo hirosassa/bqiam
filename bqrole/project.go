@@ -24,7 +24,7 @@ func ProjectRole(role string) (string, error) {
 	return "", fmt.Errorf("failed to parse %s", role)
 }
 
-func PermitProject(role, project string, users []string) error {
+func PermitProject(role, project string, users []string, yes bool) error {
 	ctx := context.Background()
 	client, err := bq.NewClient(ctx, project)
 	if err != nil {
@@ -34,14 +34,17 @@ func PermitProject(role, project string, users []string) error {
 	fmt.Printf("project_id: %s\n", project)
 	fmt.Printf("role:       %s\n", role)
 	fmt.Printf("users:      %s\n", users)
-	fmt.Printf("If you proceeds, PROJECT-WIDE permission will be added. Are you sure? [y/n]")
 
-	reader := bufio.NewReader(os.Stdin)
-	res, err := reader.ReadString('\n')
+	if !yes {
+		fmt.Printf("If you proceeds, PROJECT-WIDE permission will be added. Are you sure? [y/n]")
 
-	if err != nil || strings.TrimSpace(res) != "y" {
-		fmt.Println("Abort.")
-		return nil
+		reader := bufio.NewReader(os.Stdin)
+		res, err := reader.ReadString('\n')
+
+		if err != nil || strings.TrimSpace(res) != "y" {
+			fmt.Println("Abort.")
+			return nil
+		}
 	}
 
 	defer client.Close()

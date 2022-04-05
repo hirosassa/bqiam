@@ -46,6 +46,7 @@ bqiam permit project READER -p bq-project-id -u user1@email.com
 		},
 	}
 
+	cmd.PersistentFlags().BoolP("yes", "y", false, "Automatic yes to prompts")
 	cmd.AddCommand(
 		newPermitProjectCmd(),
 		newPermitDatasetCmd(),
@@ -100,7 +101,12 @@ func runPermitProjectCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse users flag: %s", err)
 	}
 
-	err = bqrole.PermitProject(role, project, users)
+	yes, err := cmd.Flags().GetBool("yes")
+	if err != nil {
+		return fmt.Errorf("failed to parse yes flag: %s", err)
+	}
+
+	err = bqrole.PermitProject(role, project, users, yes)
 	if err != nil {
 		return fmt.Errorf("failed to permit: %s", err)
 	}
@@ -161,7 +167,12 @@ func runPermitDatasetCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse datasets flag: %s", err)
 	}
 
-	err = bqrole.PermitDataset(role, project, users, datasets)
+	yes, err := cmd.Flags().GetBool("yes")
+	if err != nil {
+		return fmt.Errorf("failed to parse yes flag: %s", err)
+	}
+
+	err = bqrole.PermitDataset(role, project, users, datasets, yes)
 	if err != nil {
 		return fmt.Errorf("failed to permit: %s", err)
 	}
