@@ -91,7 +91,7 @@ func PermitDataset(role bq.AccessRole, project string, users, datasets []string,
 	return nil
 }
 
-func RevokeDataset(role bq.AccessRole, project string, users, datasets []string) error {
+func RevokeDataset(role bq.AccessRole, project string, users, datasets []string, yes bool) error {
 	ctx := context.Background()
 	client, err := bq.NewClient(ctx, project)
 	if err != nil {
@@ -103,14 +103,17 @@ func RevokeDataset(role bq.AccessRole, project string, users, datasets []string)
 	fmt.Printf("role:       %s\n", role)
 	fmt.Printf("datasets:   %s\n", datasets)
 	fmt.Printf("users:      %s\n", users)
-	fmt.Printf("Are you sure? [y/n]")
 
-	reader := bufio.NewReader(os.Stdin)
-	res, err := reader.ReadString('\n')
+	if !yes {
+		fmt.Printf("Are you sure? [y/n]")
 
-	if err != nil || strings.TrimSpace(res) != "y" {
-		fmt.Println("Abort.")
-		return nil
+		reader := bufio.NewReader(os.Stdin)
+		res, err := reader.ReadString('\n')
+
+		if err != nil || strings.TrimSpace(res) != "y" {
+			fmt.Println("Abort.")
+			return nil
+		}
 	}
 
 	defer client.Close()
@@ -207,7 +210,7 @@ func revokeDatasetPermission(ctx context.Context, client *bq.Client, role bq.Acc
 	return nil
 }
 
-func hasBQRole(p ProjectPolicy, user string, role string) bool {
+func hasBQRole(p *ProjectPolicy, user string, role string) bool {
 	for _, b := range p.Bindings {
 		if b.Role == role {
 			for _, m := range b.Members {

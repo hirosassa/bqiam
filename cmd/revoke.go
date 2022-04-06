@@ -43,8 +43,10 @@ bqiam revoke project READER -p bq-project-id -u user1@email.com
 		},
 	}
 
+	cmd.PersistentFlags().BoolP("yes", "y", false, "Automatic yes to prompts")
 	cmd.AddCommand(
 		newRevokeDatasetCmd(),
+		newRevokeProjectCmd(),
 	)
 
 	return cmd
@@ -69,6 +71,9 @@ bqiam project READER -p bq-project-id -u user1@email.com -u user2@email.com`,
 
 	cmd.Flags().StringSliceP("users", "u", []string{}, "Specify user email(s)")
 
+	_ = registerProjectsCompletions(cmd)
+	_ = registerUsersCompletions(cmd)
+
 	return cmd
 }
 
@@ -92,7 +97,12 @@ func runRevokeProjectCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse users flag: %s", err)
 	}
 
-	err = bqrole.RevokeProject(role, project, users)
+	yes, err := cmd.Flags().GetBool("yes")
+	if err != nil {
+		return fmt.Errorf("failed to parse yes flag: %s", err)
+	}
+
+	err = bqrole.RevokeProject(role, project, users, yes)
 	if err != nil {
 		return fmt.Errorf("failed to revoke: %s", err)
 	}
@@ -119,6 +129,10 @@ bqiam dataset READER -p bq-project-id -u user1@email.com -u user2@email.com -d d
 
 	cmd.Flags().StringSliceP("users", "u", []string{}, "Specify user email(s)")
 	cmd.Flags().StringSliceP("datasets", "d", []string{}, "Specify dataset(s)")
+
+	_ = registerProjectsCompletions(cmd)
+	_ = registerDatasetsCompletions(cmd)
+	_ = registerUsersCompletions(cmd)
 
 	return cmd
 }
@@ -148,7 +162,12 @@ func runRevokeDatasetCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse datasets flag: %s", err)
 	}
 
-	err = bqrole.RevokeDataset(role, project, users, datasets)
+	yes, err := cmd.Flags().GetBool("yes")
+	if err != nil {
+		return fmt.Errorf("failed to parse yes flag: %s", err)
+	}
+
+	err = bqrole.RevokeDataset(role, project, users, datasets, yes)
 	if err != nil {
 		return fmt.Errorf("failed to revoke: %s", err)
 	}
