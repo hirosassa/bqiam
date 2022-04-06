@@ -33,6 +33,7 @@ func PermitDataset(role bq.AccessRole, project string, users, datasets []string,
 	if err != nil {
 		return errors.New("failed to create bigquery Client")
 	}
+	defer client.Close()
 
 	fmt.Printf("PERMIT following roles\n")
 	fmt.Printf("project_id: %s\n", project)
@@ -51,8 +52,6 @@ func PermitDataset(role bq.AccessRole, project string, users, datasets []string,
 			return nil
 		}
 	}
-
-	defer client.Close()
 
 	policy, err := FetchCurrentPolicy(project)
 	if err != nil {
@@ -97,6 +96,7 @@ func RevokeDataset(role bq.AccessRole, project string, users, datasets []string,
 	if err != nil {
 		return errors.New("failed to create bigquery Client")
 	}
+	defer client.Close()
 
 	fmt.Printf("REVOKE following roles\n")
 	fmt.Printf("project_id: %s\n", project)
@@ -115,8 +115,6 @@ func RevokeDataset(role bq.AccessRole, project string, users, datasets []string,
 			return nil
 		}
 	}
-
-	defer client.Close()
 
 	// revoke permissions for each datasets
 	for _, dataset := range datasets {

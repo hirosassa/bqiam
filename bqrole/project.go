@@ -30,6 +30,7 @@ func PermitProject(role, project string, users []string, yes bool) error {
 	if err != nil {
 		return errors.New("failed to create bigquery Client")
 	}
+	defer client.Close()
 
 	fmt.Printf("PERMIT following PROJECT-WIDE permission\n")
 	fmt.Printf("project_id: %s\n", project)
@@ -47,8 +48,6 @@ func PermitProject(role, project string, users []string, yes bool) error {
 			return nil
 		}
 	}
-
-	defer client.Close()
 
 	policy, err := FetchCurrentPolicy(project)
 	if err != nil {
@@ -73,6 +72,7 @@ func RevokeProject(role, project string, users []string, yes bool) error {
 	if err != nil {
 		return errors.New("failed to create bigquery Client")
 	}
+	defer client.Close()
 
 	fmt.Printf("REVOKE following PROJECT-WIDE permission\n")
 	fmt.Printf("project_id: %s\n", project)
@@ -90,8 +90,6 @@ func RevokeProject(role, project string, users []string, yes bool) error {
 			return nil
 		}
 	}
-
-	defer client.Close()
 
 	policy, err := FetchCurrentPolicy(project)
 	if err != nil {
