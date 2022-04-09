@@ -128,7 +128,7 @@ func RevokeDataset(role bq.AccessRole, project string, users, datasets []string,
 					return err
 				}
 			}
-			fmt.Printf("Revoke %s to %s access as %s\n", user, dataset, role)
+			fmt.Printf("Revoked %s's permission of %s access as %s\n", user, dataset, role)
 		}
 	}
 

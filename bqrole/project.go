@@ -102,7 +102,7 @@ func RevokeProject(role, project string, users []string, yes bool) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Revoke %s to %s access as %s\n", user, project, role)
+		fmt.Printf("Revoked %s's permission of %s access as %s\n", user, project, role)
 	}
 
 	return nil
