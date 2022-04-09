@@ -12,8 +12,8 @@ Currently supports;
 
 - list the user's permissions for each BigQuery Datasets
 - permit users to each BigQuery Datasets access role (READER/WRITER/OWNER) and `roles/bigquery.jobUser` (to run query)
-- permit users to Project-wide access role (`roles/viewer` or `rolse/editor`) 
-
+- permit users to Project-wide access role (`roles/viewer` or `rolse/editor`)
+- revoke users' datasets and/or project-wide permissions
 
 ## Requirement
 
@@ -70,6 +70,17 @@ Permit user2@email.com to bq-project-id access as READER
 ...
 
 ```
+
+Revoke the user(s)' access permissions.
+```bash
+$ bqiam revoke dataset READER -p bq-project-id -u user1@email.com -d dataset1
+Revoked user1@email.com's permission of dataset1 access as READER
+
+$ bqiam project READER -p bq-project-id -u user1@email.com -u user2@email.com
+Revoked user1@email.com's permission of bq-project-id access as READER
+Revoked user2@email.com's permission of bq-project-id access as READER
+```
+
 
 ## Completion
 Completion is available for bash or zsh.
