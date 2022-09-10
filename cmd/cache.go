@@ -24,8 +24,8 @@ import (
 	bq "cloud.google.com/go/bigquery"
 
 	"github.com/spf13/cobra"
-	"github.com/vbauerster/mpb/v8"
-	"github.com/vbauerster/mpb/v8/decor"
+	mpb "github.com/vbauerster/mpb/v8"
+	decor "github.com/vbauerster/mpb/v8/decor"
 	"google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/iterator"
 
