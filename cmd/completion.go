@@ -99,7 +99,6 @@ func createCompletionFile() error {
 					list.Users = append(list.Users, splited[1])
 				}
 			}
-
 		}
 	}
 
