@@ -12,7 +12,6 @@ require (
 	github.com/rs/zerolog v1.28.0
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.13.0
-	github.com/vbauerster/mpb/v5 v5.4.0
 	golang.org/x/net v0.0.0-20220909164309-bea034e7d591 // indirect
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1 // indirect
 	google.golang.org/api v0.95.0
@@ -20,6 +19,8 @@ require (
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/djherbis/times.v1 v1.3.0
 )
+
+require github.com/vbauerster/mpb/v8 v8.0.2
 
 require (
 	cloud.google.com/go v0.104.0 // indirect
