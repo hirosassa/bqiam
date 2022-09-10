@@ -5,9 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os/exec"
-
 	"os"
+	"os/exec"
 	"strings"
 
 	bq "cloud.google.com/go/bigquery"

@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,8 +24,8 @@ import (
 	bq "cloud.google.com/go/bigquery"
 
 	"github.com/spf13/cobra"
-	"github.com/vbauerster/mpb/v5"
-	"github.com/vbauerster/mpb/v5/decor"
+	mpb "github.com/vbauerster/mpb/v8"
+	decor "github.com/vbauerster/mpb/v8/decor"
 	"google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/iterator"
 
