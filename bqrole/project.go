@@ -121,8 +121,9 @@ func grantProjectRole(project, user, role string, policy *ProjectPolicy) error {
 		member = "user:" + user
 	}
 
-	cmd := fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role %s", project, member, role)
-	if err := exec.Command("bash", "-c", cmd).Run(); err != nil {
+	cmd := exec.Command("gcloud", "projects", "add-iam-policy-binding", project, "--member", member, "--role", role, "--condition=None")
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to update policy bindings to grant %s %s: %s\n%s", user, role, err, err.(*exec.ExitError).Stderr)
 	}
 
