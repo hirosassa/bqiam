@@ -148,12 +148,12 @@ func grantBQRole(project, user, role string, policy *ProjectPolicy) error {
 		member = "user:" + user
 	}
 
-	cmd := fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role %s", project, member, role)
+	cmd := fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role %s --condition=None", project, member, role)
 	out, err := exec.Command("bash", "-c", cmd).CombinedOutput()
 	if strings.Contains(string(out), "INVALID_ARGUMENT") { // try to bind to "group" account
 		log.Warn().Msg("failed to permit as user account, try group account")
 		member = "group:" + user
-		cmd = fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role %s", project, member, role)
+		cmd = fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role %s --condition=None", project, member, role)
 		err = exec.Command("bash", "-c", cmd).Run()
 	}
 
