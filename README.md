@@ -23,7 +23,7 @@ You must have a `roles/owner` on your GCP project.
 ## Install
 
 ```bash
-$ go get -u github.com/hirosassa/bqiam
+$ go install github.com/hirosassa/bqiam@latest
 ```
 
 
