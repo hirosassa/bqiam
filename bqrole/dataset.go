@@ -148,15 +148,22 @@ func grantBQRole(project, user, role string, policy *ProjectPolicy) error {
 		member = "user:" + user
 	}
 
-	cmd := fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role %s --condition=None", project, member, role)
-	out, err := exec.Command("bash", "-c", cmd).CombinedOutput()
-	if strings.Contains(string(out), "INVALID_ARGUMENT") { // try to bind to "group" account
-		log.Warn().Msg("failed to permit as user account, try group account")
-		member = "group:" + user
-		cmd = fmt.Sprintf("gcloud projects add-iam-policy-binding %s --member %s --role %s --condition=None", project, member, role)
-		err = exec.Command("bash", "-c", cmd).Run()
+	cmd := exec.Command("gcloud", "projects", "add-iam-policy-binding", project, "--member", member, "--role", role, "--condition=None")
+	out, err := cmd.CombinedOutput()
+	if !strings.Contains(string(out), "INVALID_ARGUMENT") {
+		if err != nil {
+			fmt.Fprintln(os.Stderr, out)
+			return fmt.Errorf("failed to update policy bindings to grant %s %s: %s", user, role, err)
+		}
+		return nil
 	}
 
+	// try to bind to "group" account
+	log.Warn().Msg("failed to permit as user account, try group account")
+	member = "group:" + user
+	cmd = exec.Command("gcloud", "projects", "add-iam-policy-binding", project, "--member", member, "--role", role, "--condition=None")
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("failed to update policy bindings to grant %s %s: %s", user, role, err)
 	}
