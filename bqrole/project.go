@@ -122,9 +122,22 @@ func grantProjectRole(project, user, role string, policy *ProjectPolicy) error {
 	}
 
 	cmd := exec.Command("gcloud", "projects", "add-iam-policy-binding", project, "--member", member, "--role", role, "--condition=None")
+	out, err := cmd.CombinedOutput()
+	if !strings.Contains(string(out), "INVALID_ARGUMENT") {
+		if err != nil {
+			fmt.Fprintln(os.Stderr, out)
+			return fmt.Errorf("failed to update policy bindings to grant %s %s: %s", user, role, err)
+		}
+		return nil
+	}
+
+	// try to bind to "group" account
+	log.Warn().Msg("failed to permit as user account, try group account")
+	member = "group:" + user
+	cmd = exec.Command("gcloud", "projects", "add-iam-policy-binding", project, "--member", member, "--role", role, "--condition=None")
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to update policy bindings to grant %s %s: %s\n%s", user, role, err, err.(*exec.ExitError).Stderr)
+		return fmt.Errorf("failed to update policy bindings to grant %s %s: %s", user, role, err)
 	}
 
 	return nil
