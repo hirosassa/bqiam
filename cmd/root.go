@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
@@ -93,17 +94,16 @@ func logOutput() {
 }
 
 func realPath(filename string) (string, error) {
-	if strings.HasPrefix(filename, "~/") {
-		userDir, err := os.UserHomeDir()
-		if err != nil {
-			return filename, err
-		}
-
-		relativePath, _ := strings.CutPrefix(filename, "~")
-		return userDir + relativePath, nil
-
+	if !strings.HasPrefix(filename, "~/") {
+		return filename, nil
 	}
-	return filename, nil
+
+	userDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(userDir, filename[2:]), nil
 }
 
 func init() {
