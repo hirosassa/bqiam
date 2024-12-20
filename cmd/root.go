@@ -73,12 +73,19 @@ func initConfig() {
 		os.Exit(1)
 	}
 
-	filename, err := realPath(config.CacheFile)
+	realCacheFile, err := realPath(config.CacheFile)
 	if err != nil {
 		fmt.Println("Failed to expand Cache File Path:", config.CacheFile)
 		os.Exit(1)
 	}
-	config.CacheFile = filename
+	config.CacheFile = realCacheFile
+
+	realCompletionFilePath, err := realPath(config.CompletionFilePath)
+	if err != nil {
+		fmt.Println("Failed to expand Completion File Path:", config.CompletionFilePath)
+		os.Exit(1)
+	}
+	config.CompletionFilePath = realCompletionFilePath
 
 	logOutput() // set log level
 }
