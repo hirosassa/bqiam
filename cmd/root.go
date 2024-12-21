@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/rs/zerolog"
@@ -71,6 +73,20 @@ func initConfig() {
 		os.Exit(1)
 	}
 
+	realCacheFile, err := realPath(config.CacheFile)
+	if err != nil {
+		fmt.Println("Failed to expand Cache File Path:", config.CacheFile)
+		os.Exit(1)
+	}
+	config.CacheFile = realCacheFile
+
+	realCompletionFilePath, err := realPath(config.CompletionFilePath)
+	if err != nil {
+		fmt.Println("Failed to expand Completion File Path:", config.CompletionFilePath)
+		os.Exit(1)
+	}
+	config.CompletionFilePath = realCompletionFilePath
+
 	logOutput() // set log level
 }
 
@@ -82,6 +98,19 @@ func logOutput() {
 	case debug:
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
+}
+
+func realPath(filename string) (string, error) {
+	if !strings.HasPrefix(filename, "~/") {
+		return filename, nil
+	}
+
+	userDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(userDir, filename[2:]), nil
 }
 
 func init() {
