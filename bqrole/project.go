@@ -125,7 +125,7 @@ func grantProjectRole(project, user, role string, policy *ProjectPolicy) error {
 	out, err := cmd.CombinedOutput()
 	if !strings.Contains(string(out), "INVALID_ARGUMENT") {
 		if err != nil {
-			fmt.Fprintln(os.Stderr, out)
+			fmt.Fprintln(os.Stderr, string(out))
 			return fmt.Errorf("failed to update policy bindings to grant %s %s: %s", user, role, err)
 		}
 		return nil
