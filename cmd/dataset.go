@@ -69,7 +69,7 @@ func refreshCache(cmd *cobra.Command) {
 func checkCacheExpired(filename string) (bool, error) {
 	t, err := times.Stat(filename)
 	if err != nil {
-		return false, fmt.Errorf("Failed to get file modified timestamp: %s", err)
+		return false, fmt.Errorf("failed to get file modified timestamp: %s", err)
 	}
 
 	timePassed := time.Since(t.ModTime()).Hours()
